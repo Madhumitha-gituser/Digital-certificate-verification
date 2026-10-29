@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% block title %}About — How Digital Certificate Verification Works{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <div class="container text-center">
+        <i class="bi bi-cpu" style="font-size:3rem; color:#60a5fa;"></i>
+        <h1 class="mt-2 text-white fw-bold">How Digital Signature Verification Works</h1>
+        <p class="lead text-light opacity-75">A comprehensive guide to RSA-2048, SHA-256 canonical hashing, and certificate verification architecture.</p>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row g-4">
+
+        <!-- Left column: concepts & demo guide -->
+        <div class="col-lg-8">
+
+            <!-- Quick Demo Steps (Transferred from Homepage) -->
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-play-circle-fill text-primary me-2"></i>Quick Demo Steps</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex gap-3 align-items-start mb-3">
+                        <div class="step-circle">1</div>
+                        <div>
+                            <strong>Generate Sample Certificates</strong><br>
+                            <code class="small bg-light px-2 py-1 rounded text-primary">python generate_samples.py</code><br>
+                            <span class="text-muted small">Creates authentic, tampered, and unknown sample packages in <code>sample_certificates/</code>.</span>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 align-items-start mb-3">
+                        <div class="step-circle">2</div>
+                        <div>
+                            <strong>Go to Verify Portal</strong><br>
+                            <a href="/verify" class="text-decoration-none fw-medium">Open /verify page</a><br>
+                            <span class="text-muted small">Upload any of the generated JSON files or enter certificate fields manually.</span>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 align-items-start mb-3">
+                        <div class="step-circle">3</div>
+                        <div>
+                            <strong>Observe All Three Scenarios</strong><br>
+                            <span class="text-muted small">
+                                <span class="badge bg-success">valid_CERT-2026-001.json</span> &rarr; VALID<br>
+                                <span class="badge bg-danger">tampered_CERT-2026-001.json</span> &rarr; TAMPERED<br>
+                                <span class="badge bg-warning text-dark">unknown_CERT-2026-999.json</span> &rarr; NOT FOUND
+                            </span>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="step-circle">4</div>
+                        <div>
+                            <strong>Administrative Management</strong><br>
+                            <a href="/login" class="text-decoration-none fw-medium">Log in to the Admin Portal</a><br>
+                            <span class="text-muted small">Issue freshly signed certificates, inspect the authoritative registry, and test real-time revocation.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: SHA-256 -->
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-fingerprint text-primary me-2"></i>1. SHA-256 Hashing: The Unique Fingerprint</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-secondary">
+                        <strong>SHA-256</strong> (Secure Hash Algorithm 256-bit) computes a fixed 256-bit (64 hex character) digest of arbitrary input data. Due to the <em>avalanche effect</em>, any alteration to the certificate details produces an entirely different hash.
+                    </p>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <div class="code-block">
+                                Input: "Ananya Sharma"<br>
+                                Hash:  3f2a9b1c...
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="code-block">
+                                Input: "Fake Student" (altered)<br>
+                                Hash:  d8e4f72a... (completely different)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info border-0 bg-info bg-opacity-10 text-dark small mb-0">
+                        <i class="bi bi-info-circle me-1"></i> <strong>Key Property:</strong> SHA-256 is a <em>one-way cryptographic hash function</em>: you cannot reconstruct the original certificate data from the hash alone.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Canonical JSON -->
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-braces text-primary me-2"></i>2. Canonical JSON: Deterministic Formatting</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-secondary">
+                        Standard JSON serialization is arbitrary with regards to key order and whitespace. If a signer serializes <code>{"name":"Ananya","id":"001"}</code> and the verifier serializes <code>{"id":"001","name":"Ananya"}</code>, their byte hashes will differ.
+                    </p>
+                    <div class="code-block mb-3">
+# Deterministic canonical formatting
+json.dumps(cert_data, sort_keys=True, separators=(',', ':'))
+
+# Canonical output (guaranteed identical byte sequence):
+{"cert_id":"CERT-2026-001","course":"B.E. Information Science...","institution":"Demo Engineering College","issue_date":"01 October 2026","student_name":"Ananya Sharma"}
+                    </div>
+                    <div class="alert alert-light border small mb-0">
+                        <i class="bi bi-check2-circle text-success me-1"></i> Both the signing and verification routines use the exact same canonical serialization algorithm.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: RSA-2048 Signing -->
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-shield-lock text-primary me-2"></i>3. RSA-2048 Digital Signatures with PSS Padding</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-secondary">
+                        Digital signatures rely on asymmetric public-key cryptography:
+                    </p>
+                    <ul class="text-secondary">
+                        <li><strong>Private Key:</strong> Kept strictly secret on the issuing server. Signs the canonical certificate hash.</li>
+                        <li><strong>Public Key:</strong> Freely distributed to employers, universities, and students to verify signatures.</li>
+                    </ul>
+
+                    <!-- Signing flow -->
+                    <div class="bg-light border rounded p-3 mb-3">
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-pen me-1"></i> Signing Flow (Issuance)</h6>
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <span class="badge bg-primary">Certificate Data</span>
+                            <i class="bi bi-arrow-right text-muted"></i>
+                            <span class="badge bg-secondary">Canonical JSON</span>
+                            <i class="bi bi-arrow-right text-muted"></i>
+                            <span class="badge bg-secondary">SHA-256 Digest</span>
+                            <i class="bi bi-arrow-right text-muted"></i>
+                            <span class="badge bg-dark">RSA Private Key + PSS</span>
+                            <i class="bi bi-arrow-right text-muted"></i>
+                            <span class="badge bg-success">Digital Signature</span>
+                        </div>
+                    </div>
+
+                    <!-- Verification flow -->
+                    <div class="bg-light border rounded p-3 mb-3">
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-search me-1"></i> Verification Flow (Verification Portal)</h6>
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <span class="badge bg-primary">Submitted Fields</span>
+                            <i class="bi bi-arrow-right text-muted"></i>
+                            <span class="badge bg-secondary">Canonical JSON</span>
+                            <i class="bi bi-arrow-right text-muted"></i>
+                            <span class="badge bg-dark">RSA Public Key Verify</span>
+                            <i class="bi bi-arrow-right text-muted"></i>
+                            <span class="badge bg-success">&check; Valid</span>
+                            <span class="text-muted">or</span>
+                            <span class="badge bg-danger">&cross; Tampered</span>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info border-0 bg-info bg-opacity-10 text-dark small mb-0">
+                        <strong>Why RSA-PSS?</strong> Probabilistic Signature Scheme (PSS) adds a randomized salt to each signing operation. This provides provable security bounds and defends against chosen-message attacks inherent in legacy PKCS#1 v1.5 padding.
+                    </div>
+                </div>
+            </div>
+
+            <!-- The three verification cases -->
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-diagram-3 text-primary me-2"></i>Verification Case Analysis</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3 p-3 rounded" style="background:#f0fdf4; border-left: 4px solid #16a34a;">
+                        <h6 class="text-success fw-bold"><i class="bi bi-check-circle me-2"></i>Case 1: VALID Certificate</h6>
+                        <ol class="small mb-0 text-secondary">
+                            <li>Certificate ID exists in the authoritative registry.</li>
+                            <li>Submitted data matches stored canonical JSON string.</li>
+                            <li>SHA-256 hash matches the registry digest.</li>
+                            <li>RSA-PSS signature verifies cleanly with the public key.</li>
+                            <li>Revocation flag is inactive.</li>
+                        </ol>
+                    </div>
+                    <div class="mb-3 p-3 rounded" style="background:#fef2f2; border-left: 4px solid #dc2626;">
+                        <h6 class="text-danger fw-bold"><i class="bi bi-x-circle me-2"></i>Case 2: TAMPERED Certificate</h6>
+                        <ol class="small mb-0 text-secondary">
+                            <li>Certificate ID exists in the trusted database.</li>
+                            <li>Submitted data (e.g. altered name) fails canonical JSON equality.</li>
+                            <li>Original signature was signed for genuine data; signature verification fails.</li>
+                            <li>Verdict: Rejection with clear tamper notification.</li>
+                        </ol>
+                    </div>
+                    <div class="p-3 rounded" style="background:#fff7ed; border-left: 4px solid #ea580c;">
+                        <h6 class="text-warning fw-bold"><i class="bi bi-question-circle me-2"></i>Case 3: UNKNOWN Certificate</h6>
+                        <ol class="small mb-0 text-secondary">
+                            <li>Certificate ID is absent from the authoritative registry.</li>
+                            <li>No trusted signature or canonical baseline exists.</li>
+                            <li>Verdict: NOT FOUND (unrecognized credential, not misclassified as tampered).</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right column: Technology Used & Public Key -->
+        <div class="col-lg-4">
+
+            <!-- Technology Used (Transferred from Homepage) -->
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-cpu text-primary me-2"></i>Technology Used</h6>
+                </div>
+                <div class="card-body p-3">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2 d-flex align-items-center">
+                            <i class="bi bi-check2 text-success me-2"></i>
+                            <div><strong>FastAPI</strong> <span class="text-muted small">— High-performance web framework</span></div>
+                        </li>
+                        <li class="mb-2 d-flex align-items-center">
+                            <i class="bi bi-check2 text-success me-2"></i>
+                            <div><strong>RSA-2048 + PSS</strong> <span class="text-muted small">— Asymmetric signatures</span></div>
+                        </li>
+                        <li class="mb-2 d-flex align-items-center">
+                            <i class="bi bi-check2 text-success me-2"></i>
+                            <div><strong>SHA-256</strong> <span class="text-muted small">— Data integrity digest</span></div>
+                        </li>
+                        <li class="mb-2 d-flex align-items-center">
+                            <i class="bi bi-check2 text-success me-2"></i>
+                            <div><strong>SQLite</strong> <span class="text-muted small">— Authoritative certificate registry</span></div>
+                        </li>
+                        <li class="mb-2 d-flex align-items-center">
+                            <i class="bi bi-check2 text-success me-2"></i>
+                            <div><strong>ReportLab</strong> <span class="text-muted small">— Automated PDF generation</span></div>
+                        </li>
+                        <li class="mb-2 d-flex align-items-center">
+                            <i class="bi bi-check2 text-success me-2"></i>
+                            <div><strong>Jinja2</strong> <span class="text-muted small">— Server-side HTML templating</span></div>
+                        </li>
+                        <li class="mb-2 d-flex align-items-center">
+                            <i class="bi bi-check2 text-success me-2"></i>
+                            <div><strong>Bootstrap 5</strong> <span class="text-muted small">— Responsive design &amp; layout</span></div>
+                        </li>
+                        <li class="mb-2 d-flex align-items-center">
+                            <i class="bi bi-check2 text-success me-2"></i>
+                            <div><strong>pytest</strong> <span class="text-muted small">— Comprehensive test suite</span></div>
+                        </li>
+                        <li class="pt-2 border-top text-muted small">
+                            <i class="bi bi-shield-check text-primary me-1"></i> Zero external cloud APIs or paid dependencies.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Key pair info -->
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-key text-primary me-2"></i>RSA Key Specifications</h6>
+                </div>
+                <div class="card-body p-3">
+                    <table class="table table-sm table-borderless mb-2">
+                        <tr><th class="text-muted fw-normal">Algorithm</th><td class="fw-semibold">RSA-2048</td></tr>
+                        <tr><th class="text-muted fw-normal">Padding</th><td class="fw-semibold">PSS (SHA-256)</td></tr>
+                        <tr><th class="text-muted fw-normal">Hash</th><td class="fw-semibold">SHA-256</td></tr>
+                        <tr><th class="text-muted fw-normal">Public Exponent</th><td class="fw-semibold">65537 (0x10001)</td></tr>
+                        <tr><th class="text-muted fw-normal">Format</th><td class="fw-semibold">PKCS#8 / PEM</td></tr>
+                    </table>
+                    <div class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger small mb-0">
+                        <i class="bi bi-lock-fill me-1"></i> The private key is strictly isolated in <code>instance/</code> and never exposed via API or UI.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Public key display -->
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-unlock text-primary me-2"></i>Public Verification Key</h6>
+                </div>
+                <div class="card-body p-3">
+                    <p class="small text-muted mb-2">Anyone can use this public key to verify digital signatures created by the system.</p>
+                    <pre class="code-block mb-0" style="font-size:0.72rem; max-height:220px; overflow-y:auto;">{{ public_key_pem }}</pre>
+                </div>
+            </div>
+
+            <!-- Project Architecture -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-folder-check text-primary me-2"></i>Project Architecture</h6>
+                </div>
+                <div class="card-body p-3">
+                    <pre class="code-block mb-0" style="font-size:0.75rem;">Digital-certificate-verification/
+  app.py                  # Web application routes
+  crypto_utils.py         # RSA & SHA-256 routines
+  certificate_service.py  # Verification logic
+  database.py             # SQLite persistence
+  pdf_generator.py        # ReportLab visual certs
+  generate_samples.py     # Sample generation script
+  templates/              # Jinja2 templates
+  sample_certificates/    # Demo JSON & PDF files
+  instance/               # Keys & SQLite database</pre>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

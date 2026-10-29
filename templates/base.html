@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CertVerify{% endblock %} — Digital Certificate Verification</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand-navy: #0b192c;
+            --brand-navy-light: #1e3e62;
+            --brand-blue: #1565c0;
+            --brand-blue-accent: #2196f3;
+            --bg-light: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --card-border: #e2e8f0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: var(--brand-navy) !important;
+            padding: 0.9rem 0;
+            box-shadow: 0 4px 20px rgba(11, 25, 44, 0.15);
+        }
+        .navbar-brand {
+            font-weight: 800;
+            color: #ffffff !important;
+            font-size: 1.25rem;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+        }
+        .navbar-brand i {
+            color: #60a5fa;
+            font-size: 1.4rem;
+        }
+        .nav-link {
+            color: #cbd5e1 !important;
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 0.5rem 0.9rem !important;
+            transition: all 0.2s ease;
+            border-radius: 6px;
+        }
+        .nav-link:hover {
+            color: #ffffff !important;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .nav-link.active {
+            color: #ffffff !important;
+            background: rgba(96, 165, 250, 0.18);
+        }
+
+        /* Modern Card Styling */
+        .card {
+            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+            border-radius: 14px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background: #ffffff;
+        }
+        .card-header {
+            border-radius: 14px 14px 0 0 !important;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        /* Status badges */
+        .badge-valid    { background-color: #15803d; color: #fff; }
+        .badge-invalid  { background-color: #b91c1c; color: #fff; }
+        .badge-notfound { background-color: #c2410c; color: #fff; }
+        .badge-revoked  { background-color: #7e22ce; color: #fff; }
+
+        /* Result panels */
+        .result-valid    { border-left: 6px solid #16a34a; background: #f0fdf4; }
+        .result-invalid  { border-left: 6px solid #dc2626; background: #fef2f2; }
+        .result-notfound { border-left: 6px solid #ea580c; background: #fff7ed; }
+        .result-revoked  { border-left: 6px solid #9333ea; background: #faf5ff; }
+
+        /* Code blocks */
+        .code-block {
+            background: #0f172a;
+            color: #94a3b8;
+            border-radius: 10px;
+            padding: 1.1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, #0b192c 0%, #1e3e62 100%);
+            color: white;
+            padding: 4.5rem 0 4rem;
+            position: relative;
+        }
+
+        /* Feature & Step Icons */
+        .icon-circle {
+            width: 54px;
+            height: 54px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .step-circle {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--brand-navy);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        /* Footer */
+        footer {
+            background: #0b192c;
+            color: #94a3b8;
+            padding: 2rem 0;
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.88rem;
+        }
+        footer strong {
+            color: #f1f5f9;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="bi bi-shield-check me-2"></i>CertVerify
+        </a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="nav">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
+                <li class="nav-item">
+                    <a class="nav-link" href="/"><i class="bi bi-house me-1"></i>Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/verify"><i class="bi bi-patch-check me-1"></i>Verify Certificate</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/about"><i class="bi bi-info-circle me-1"></i>About</a>
+                </li>
+                {% if admin %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/issue"><i class="bi bi-plus-circle me-1"></i>Issue</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/certificates"><i class="bi bi-list-ul me-1"></i>Certificates</a>
+                </li>
+                <li class="nav-item ms-lg-2">
+                    <a class="btn btn-sm btn-outline-light" href="/logout"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
+                </li>
+                {% else %}
+                <li class="nav-item ms-lg-2">
+                    <a class="btn btn-sm btn-outline-light px-3" href="/login"><i class="bi bi-lock me-1"></i>Admin Login</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Main content -->
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer>
+    <div class="container text-center">
+        <div class="mb-2">
+            <strong>CertVerify</strong> — Digital Certificate Verification System
+        </div>
+        <div class="text-secondary small">
+            Educational demonstration. Not an official certificate-issuing authority.
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

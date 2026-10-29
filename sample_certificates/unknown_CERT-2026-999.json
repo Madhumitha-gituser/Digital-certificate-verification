@@ -1,0 +1,14 @@
+{
+  "certificate": {
+    "cert_id": "CERT-2026-999",
+    "student_name": "Rahul Kumar",
+    "course": "B.E. Computer Science and Engineering",
+    "institution": "Unknown Private Institute",
+    "issue_date": "15 March 2026"
+  },
+  "sha256_hash": "0cce7f147aa02997ac79140f1fb5d69153f1ba646dfbc5343793860458ee12a4",
+  "signature": "UNSIGNED_NOT_FROM_TRUSTED_ISSUER",
+  "issuer_id": "UNKNOWN_ISSUER",
+  "canonical_json": "{\"cert_id\":\"CERT-2026-999\",\"course\":\"B.E. Computer Science and Engineering\",\"institution\":\"Unknown Private Institute\",\"issue_date\":\"15 March 2026\",\"student_name\":\"Rahul Kumar\"}",
+  "_demo_note": "UNKNOWN: This certificate ID is not registered in the trusted database. Verification result will be NOT_FOUND."
+}

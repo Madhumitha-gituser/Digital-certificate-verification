@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Issue Certificate{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <h2 class="fw-bold mb-1" style="color:#0b192c;">
+                <i class="bi bi-award me-2"></i>Issue New Certificate
+            </h2>
+            <p class="text-muted mb-4">
+                Fill in the certificate details. The system will sign the data with the RSA private key
+                and store it in the trusted database.
+            </p>
+
+            {% if error %}
+            <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ error }}</div>
+            {% endif %}
+
+            {% if result %}
+            <div class="alert alert-success">
+                <h6 class="fw-bold"><i class="bi bi-check-circle me-2"></i>Certificate Issued Successfully!</h6>
+                <table class="table table-sm table-borderless mb-0 mt-2">
+                    <tr><th style="width:150px">Certificate ID</th><td><code>{{ result.cert_id }}</code></td></tr>
+                    <tr><th>SHA-256 Hash</th><td><code class="small">{{ result.sha256_hash }}</code></td></tr>
+                    <tr><th>Issuer ID</th><td>{{ result.issuer_id }}</td></tr>
+                    <tr><th>Signature (B64)</th>
+                        <td><code class="small" style="word-break:break-all;">{{ result.signature_b64[:64] }}…</code></td>
+                    </tr>
+                    {% if result.already_existed %}
+                    <tr><td colspan="2" class="text-warning">
+                        <i class="bi bi-info-circle me-1"></i>
+                        This certificate ID already exists in the database. No new record was created.
+                    </td></tr>
+                    {% endif %}
+                </table>
+            </div>
+            {% endif %}
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header" style="background:#0b192c; color:white;">
+                    <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Certificate Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Certificate ID *</label>
+                                <input type="text" name="cert_id" class="form-control"
+                                       placeholder="e.g. CERT-2026-002" required>
+                                <div class="form-text">Must be unique. Use format CERT-YYYY-NNN.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Student Name *</label>
+                                <input type="text" name="student_name" class="form-control"
+                                       placeholder="e.g. Priya Mehta" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Course *</label>
+                                <input type="text" name="course" class="form-control"
+                                       placeholder="e.g. B.E. Computer Science and Engineering" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Institution *</label>
+                                <input type="text" name="institution" class="form-control"
+                                       placeholder="e.g. Demo Engineering College" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Issue Date *</label>
+                                <input type="text" name="issue_date" class="form-control"
+                                       placeholder="e.g. 01 October 2026" required>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-pen me-2"></i>Sign & Issue Certificate
+                            </button>
+                            <a href="/certificates" class="btn btn-outline-secondary btn-lg ms-2">
+                                <i class="bi bi-list me-2"></i>View All Certificates
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body small text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    When you click "Sign &amp; Issue Certificate", the system:
+                    <ol class="mb-0 mt-1">
+                        <li>Converts the data to canonical JSON (sorted keys, no spaces).</li>
+                        <li>Computes its SHA-256 hash.</li>
+                        <li>Signs the canonical JSON with the RSA-2048 private key (PSS padding).</li>
+                        <li>Stores the certificate, hash, and signature in the trusted database.</li>
+                    </ol>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+

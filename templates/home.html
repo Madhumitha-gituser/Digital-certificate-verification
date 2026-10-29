@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}CertVerify — Academic Certificate Verification{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero text-center">
+    <div class="container py-3">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 mb-3 rounded-pill" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);">
+                    <i class="bi bi-shield-check text-info"></i>
+                    <span class="small text-light fw-medium">Cryptographic Credential Assurance</span>
+                </div>
+                <h1 class="display-5 fw-bold text-white mb-3" style="letter-spacing: -0.02em;">
+                    Verify Academic Certificates with Confidence
+                </h1>
+                <p class="lead text-light opacity-75 mb-4 px-md-4">
+                    Fast, reliable validation of academic credentials using genuine RSA-2048 digital signatures, SHA-256 data integrity hashing, and an authoritative registry. Protect your institution against credential fraud.
+                </p>
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <a href="/verify" class="btn btn-primary btn-lg px-4 py-2 fw-semibold shadow-sm" style="background-color: #2563eb; border-color: #2563eb;">
+                        <i class="bi bi-patch-check me-2"></i>Verify a Certificate
+                    </a>
+                    <a href="#demo-section" class="btn btn-outline-light btn-lg px-4 py-2 fw-semibold">
+                        <i class="bi bi-arrow-down-circle me-2"></i>Explore Demo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Trust / Feature Badges -->
+<section class="border-bottom bg-white py-3">
+    <div class="container">
+        <div class="row g-3 text-center text-md-start">
+            <div class="col-md-4">
+                <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3 py-1">
+                    <div class="icon-circle bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-key-fill"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-dark">RSA-2048 &amp; PSS Padding</div>
+                        <div class="small text-muted">Asymmetric signing with probabilistic salt</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3 py-1">
+                    <div class="icon-circle bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-fingerprint"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-dark">SHA-256 Fingerprint</div>
+                        <div class="small text-muted">Strict deterministic canonical JSON hashing</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3 py-1">
+                    <div class="icon-circle bg-info bg-opacity-10 text-info">
+                        <i class="bi bi-database-check"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-dark">Authoritative Registry</div>
+                        <div class="small text-muted">Tamper-proof local SQLite persistence</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5">
+    <div class="container py-2">
+        <div class="text-center mb-5">
+            <div class="text-primary fw-bold text-uppercase small tracking-wide mb-1">Architecture</div>
+            <h2 class="fw-bold text-dark" style="letter-spacing: -0.01em;">How It Works</h2>
+            <p class="text-muted mx-auto" style="max-width: 620px;">
+                Our three-step verification workflow validates both the digital signature and the underlying record against the issuer's authoritative registry.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Step 1 -->
+            <div class="col-md-4">
+                <div class="card h-100 p-4 border-0 shadow-sm">
+                    <div class="icon-circle mb-3 bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-cloud-arrow-up-fill"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">1. Upload Certificate</h5>
+                    <p class="text-muted small mb-0">
+                        Upload the signed JSON certificate package or input the certificate identification details directly in the verification interface.
+                    </p>
+                </div>
+            </div>
+            <!-- Step 2 -->
+            <div class="col-md-4">
+                <div class="card h-100 p-4 border-0 shadow-sm">
+                    <div class="icon-circle mb-3 bg-info bg-opacity-10 text-info">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">2. Verify Digital Signature</h5>
+                    <p class="text-muted small mb-0">
+                        The system formats the data to deterministic canonical JSON, recomputes the SHA-256 digest, and verifies the RSA-PSS signature with the public key.
+                    </p>
+                </div>
+            </div>
+            <!-- Step 3 -->
+            <div class="col-md-4">
+                <div class="card h-100 p-4 border-0 shadow-sm">
+                    <div class="icon-circle mb-3 bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-patch-check-fill"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">3. View Results</h5>
+                    <p class="text-muted small mb-0">
+                        Instantly view a complete verdict: authentic, tampered (modified student or course fields), unregistered, or revoked credentials.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Try the Demo Section -->
+<section id="demo-section" class="py-5 bg-white border-top border-bottom">
+    <div class="container py-2">
+        <div class="text-center mb-5">
+            <div class="text-primary fw-bold text-uppercase small tracking-wide mb-1">Interactive Showcase</div>
+            <h2 class="fw-bold text-dark" style="letter-spacing: -0.01em;">Try the Demo</h2>
+            <p class="text-muted mx-auto" style="max-width: 640px;">
+                Test real cryptographic verification using our pre-generated sample credentials. Each scenario represents a distinct verification outcome.
+            </p>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- Scenario 1: Valid -->
+            <div class="col-lg-4">
+                <div class="card h-100 border-success border-opacity-25 shadow-sm">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-success px-3 py-2 fw-semibold">
+                                <i class="bi bi-check-circle me-1"></i>VALID SCENARIO
+                            </span>
+                            <small class="text-muted font-monospace">CERT-2026-001</small>
+                        </div>
+                        <h5 class="card-title fw-bold text-dark mb-1">Authentic Certificate</h5>
+                        <p class="text-secondary small mb-2">Recipient: <strong>Ananya Sharma</strong></p>
+                        <p class="card-text text-muted small flex-grow-1">
+                            An authentic certificate issued by the institution. The signed canonical data matches the trusted SQLite database record and passes RSA-PSS signature verification.
+                        </p>
+                        <div class="pt-3 border-top mt-3">
+                            <div class="d-flex gap-2 mb-2">
+                                <a href="/samples/valid_CERT-2026-001.json" class="btn btn-sm btn-outline-success flex-fill" download>
+                                    <i class="bi bi-download me-1"></i>Signed JSON
+                                </a>
+                                <a href="/samples/valid_CERT-2026-001.pdf" class="btn btn-sm btn-outline-secondary flex-fill" target="_blank">
+                                    <i class="bi bi-filetype-pdf me-1"></i>View PDF
+                                </a>
+                            </div>
+                            <a href="/verify" class="btn btn-sm btn-success w-100">
+                                <i class="bi bi-arrow-right-circle me-1"></i>Test in Verifier
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scenario 2: Tampered -->
+            <div class="col-lg-4">
+                <div class="card h-100 border-danger border-opacity-25 shadow-sm">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-danger px-3 py-2 fw-semibold">
+                                <i class="bi bi-exclamation-triangle me-1"></i>TAMPERED SCENARIO
+                            </span>
+                            <small class="text-muted font-monospace">CERT-2026-001</small>
+                        </div>
+                        <h5 class="card-title fw-bold text-dark mb-1">Tampered Certificate</h5>
+                        <p class="text-secondary small mb-2">Recipient: <strong>Fake Student</strong></p>
+                        <p class="card-text text-muted small flex-grow-1">
+                            The student name was altered from "Ananya Sharma" to "Fake Student" while preserving the original signature. The SHA-256 digest changes, causing the RSA-PSS verification to fail.
+                        </p>
+                        <div class="pt-3 border-top mt-3">
+                            <div class="d-flex gap-2 mb-2">
+                                <a href="/samples/tampered_CERT-2026-001.json" class="btn btn-sm btn-outline-danger flex-fill" download>
+                                    <i class="bi bi-download me-1"></i>Signed JSON
+                                </a>
+                                <a href="/samples/tampered_CERT-2026-001.pdf" class="btn btn-sm btn-outline-secondary flex-fill" target="_blank">
+                                    <i class="bi bi-filetype-pdf me-1"></i>View PDF
+                                </a>
+                            </div>
+                            <a href="/verify" class="btn btn-sm btn-danger w-100">
+                                <i class="bi bi-arrow-right-circle me-1"></i>Test in Verifier
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scenario 3: Unknown -->
+            <div class="col-lg-4">
+                <div class="card h-100 border-warning border-opacity-50 shadow-sm">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-warning text-dark px-3 py-2 fw-semibold">
+                                <i class="bi bi-question-circle me-1"></i>UNKNOWN SCENARIO
+                            </span>
+                            <small class="text-muted font-monospace">CERT-2026-999</small>
+                        </div>
+                        <h5 class="card-title fw-bold text-dark mb-1">Unregistered Certificate</h5>
+                        <p class="text-secondary small mb-2">Recipient: <strong>Rahul Kumar</strong></p>
+                        <p class="card-text text-muted small flex-grow-1">
+                            An unrecognized certificate ID that does not exist in the trusted registry. The system rejects it as "NOT FOUND", distinguishing it from a tampered record.
+                        </p>
+                        <div class="pt-3 border-top mt-3">
+                            <div class="d-flex gap-2 mb-2">
+                                <a href="/samples/unknown_CERT-2026-999.json" class="btn btn-sm btn-outline-warning text-dark flex-fill" download>
+                                    <i class="bi bi-download me-1"></i>Sample JSON
+                                </a>
+                                <a href="/samples/unknown_CERT-2026-999.pdf" class="btn btn-sm btn-outline-secondary flex-fill" target="_blank">
+                                    <i class="bi bi-filetype-pdf me-1"></i>View PDF
+                                </a>
+                            </div>
+                            <a href="/verify" class="btn btn-sm btn-warning text-dark w-100">
+                                <i class="bi bi-arrow-right-circle me-1"></i>Test in Verifier
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions Callout -->
+        <div class="p-4 rounded-3 border bg-light text-center">
+            <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-3">
+                <div class="text-primary fs-3">
+                    <i class="bi bi-lightbulb-fill"></i>
+                </div>
+                <div class="text-md-start">
+                    <div class="fw-bold text-dark">How to perform the test:</div>
+                    <div class="small text-muted">
+                        Download any of the signed <strong>.json</strong> files above, navigate to the <a href="/verify" class="text-primary fw-medium text-decoration-none">Verification Portal</a>, and upload the file to see the cryptographic analysis in real time.
+                    </div>
+                </div>
+                <div class="ms-md-auto">
+                    <a href="/verify" class="btn btn-primary px-3 py-2 fw-semibold">
+                        <i class="bi bi-shield-check me-1"></i>Open Verification Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action Banner -->
+<section class="py-5" style="background: linear-gradient(135deg, #0b192c 0%, #1e3e62 100%);">
+    <div class="container text-center text-white py-3">
+        <h3 class="fw-bold mb-2">Ready to verify an academic credential?</h3>
+        <p class="text-light opacity-75 mb-4 mx-auto" style="max-width: 580px;">
+            Experience transparent, cryptographic validation. Upload a certificate file or enter the verification details directly.
+        </p>
+        <a href="/verify" class="btn btn-light btn-lg px-4 py-2 fw-semibold text-primary shadow">
+            <i class="bi bi-patch-check-fill me-2"></i>Go to Verifier
+        </a>
+    </div>
+</section>
+{% endblock %}
