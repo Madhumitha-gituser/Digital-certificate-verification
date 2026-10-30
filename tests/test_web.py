@@ -156,8 +156,8 @@ def test_08_revoked_certificate_verification():
     assert "Verify Another Certificate" in response.text
 
 
-def test_09_pdf_upload_handled_accurately():
-    """Uploading a PDF informs the user that ordinary PDFs do not have embedded digital signatures."""
+def test_09_valid_pdf_upload_verifies():
+    """Uploading a digitally signed PDF certificate directly verifies as VALID."""
     session_client = TestClient(app)
     session_client.post("/login", data={"username": "admin", "password": "admin123"})
 
@@ -171,8 +171,44 @@ def test_09_pdf_upload_handled_accurately():
         )
 
     assert response.status_code == 200
-    assert "without an embedded cryptographic digital signature" in response.text
-    assert "signed JSON certificate package" in response.text
+    assert "Certificate Verified Successfully" in response.text
+    assert "Ananya Sharma" in response.text
+    assert "CERT-2026-001" in response.text
+
+
+def test_09b_tampered_pdf_rejected():
+    """Uploading a tampered PDF certificate fails verification."""
+    session_client = TestClient(app)
+    session_client.post("/login", data={"username": "admin", "password": "admin123"})
+
+    sample_path = PROJECT_ROOT / "sample_certificates" / "tampered_CERT-2026-001.pdf"
+    assert sample_path.exists(), "tampered_CERT-2026-001.pdf must exist"
+
+    with open(sample_path, "rb") as f:
+        response = session_client.post(
+            "/verify",
+            files={"certificate_file": ("tampered_CERT-2026-001.pdf", f, "application/pdf")},
+        )
+
+    assert response.status_code == 200
+    assert "Invalid Certificate" in response.text
+
+
+def test_09c_plain_unsigned_pdf_rejected():
+    """Uploading a plain unsigned PDF informs the user that it lacks an embedded signature."""
+    session_client = TestClient(app)
+    session_client.post("/login", data={"username": "admin", "password": "admin123"})
+
+    # Create a plain unsigned PDF in memory
+    plain_pdf_bytes = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF"
+
+    response = session_client.post(
+        "/verify",
+        files={"certificate_file": ("plain_unsigned.pdf", plain_pdf_bytes, "application/pdf")},
+    )
+
+    assert response.status_code == 200
+    assert "does not contain an embedded cryptographic digital signature" in response.text
 
 
 def test_10_logout():

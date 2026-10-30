@@ -106,6 +106,7 @@ generate_certificate_pdf(
     label             = "VALID",
     sha256_hash       = result_valid["sha256_hash"],
     canonical_json_ref= valid_json_name,
+    signature_b64     = result_valid["signature_b64"],
 )
 
 print("  [OK] JSON: " + str(valid_json_path.resolve()))
@@ -155,6 +156,7 @@ generate_certificate_pdf(
     label             = "TAMPERED",
     sha256_hash       = tampered_hash,
     canonical_json_ref= tampered_json_name,
+    signature_b64     = original_signature_b64,
 )
 
 print("  [TAMPERED] JSON: " + str(tampered_json_path.resolve()))
@@ -202,6 +204,7 @@ generate_certificate_pdf(
     label             = "UNKNOWN",
     sha256_hash       = unknown_hash,
     canonical_json_ref= unknown_json_name,
+    signature_b64     = "UNSIGNED_NOT_IN_TRUSTED_DATABASE",
 )
 
 print("  [UNKNOWN] JSON: " + str(unknown_json_path.resolve()))
@@ -251,6 +254,7 @@ generate_certificate_pdf(
     label             = "REVOKED",
     sha256_hash       = result_revoked["sha256_hash"],
     canonical_json_ref= revoked_json_name,
+    signature_b64     = result_revoked["signature_b64"],
 )
 
 print("  [REVOKED] JSON: " + str(revoked_json_path.resolve()))

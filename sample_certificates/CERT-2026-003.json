@@ -1,0 +1,13 @@
+{
+  "certificate": {
+    "cert_id": "CERT-2026-003",
+    "student_name": "Priya",
+    "course": "BE",
+    "institution": "Vemana Institute of Technology",
+    "issue_date": "30October2026"
+  },
+  "sha256_hash": "f38e18d1cc718042390338717c52234f6d3a1fc094e0e7351d59fd2562624c67",
+  "signature": "Dh4Mbm4NeL09LsZIV6SC0O682eVU57sVNZUydKqIoiUlWm1TPYB3hvggRkjb4Kp7hfDikrFc6u9DfS0B/kuNlP8itSlI8hUNhLe2XPuU3Z/nrWRvu7DoHvVh8PwPUCHFPp8A0+slpVTQnwh3Oq8isB92GJsIqqkKI2Sr6cs3VnVbOgf1kqqFRmDcp53Ru3cgZ0jg2xJb2V5kA31ICD0FKy7xYLjaLxc3F1FL4c9Ibr0csPdAH/gnm5QL5TuwTloEdiB6mxWZ/kTN+/69jl1HMRzY4ZUUeK6rgtn99iMnKDofSW6Sm0eTZVGASjoTj1eic3+EomZIyublZi0PGsUPSg==",
+  "issuer_id": "VemanaIT-CA-2026",
+  "canonical_json": "{\"cert_id\":\"CERT-2026-003\",\"course\":\"BE\",\"institution\":\"Vemana Institute of Technology\",\"issue_date\":\"30October2026\",\"student_name\":\"Priya\"}"
+}

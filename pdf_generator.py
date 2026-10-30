@@ -1,9 +1,12 @@
 """
-pdf_generator.py — High-Fidelity Academic Degree Certificate Generator (Landscape A4)
+pdf_generator.py — High-Fidelity Academic Degree Certificate Generator & PDF Verification
 Designed specifically for Vemana Institute of Technology (Affiliated to VTU).
 """
 
 import math
+import json
+import base64
+import re
 from pathlib import Path
 from reportlab.lib.pagesizes import landscape, A4
 from reportlab.lib.colors import HexColor, white
@@ -153,9 +156,11 @@ def generate_certificate_pdf(
     label: str = "VALID",
     sha256_hash: str = "",
     canonical_json_ref: str = "",
+    signature_b64: str = "",
 ) -> Path:
     """
-    Generate an authentic, masterfully aligned landscape academic degree certificate.
+    Generate an authentic, masterfully aligned landscape academic degree certificate,
+    embedding the cryptographic digital signature payload directly into the document metadata.
     """
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -163,6 +168,25 @@ def generate_certificate_pdf(
     c = pdf_canvas.Canvas(str(output_path), pagesize=landscape(A4))
     width, height = landscape(A4)  # 841.89 x 595.28 pt
     cx = width / 2.0               # Center X: 420.95 pt
+
+    # Embed Cryptographic Payload in PDF Metadata
+    payload = {
+        "certificate": {
+            "cert_id": cert_id,
+            "student_name": student_name,
+            "course": course,
+            "institution": institution,
+            "issue_date": issue_date,
+        },
+        "sha256_hash": sha256_hash,
+        "signature": signature_b64,
+        "issuer_id": "VemanaIT-CA-2026",
+        "canonical_json_ref": canonical_json_ref,
+    }
+    b64_payload = base64.b64encode(json.dumps(payload).encode("utf-8")).decode("ascii")
+    c.setTitle(f"CERTIFICATE-{cert_id}")
+    c.setAuthor(institution)
+    c.setSubject(b64_payload)
 
     # 1. Background Fill
     c.setFillColor(BG_IVORY)
@@ -343,3 +367,34 @@ def generate_certificate_pdf(
     c.save()
     print(f"[pdf_generator] Masterpiece certificate saved -> {output_path}")
     return output_path
+
+
+def extract_certificate_from_pdf(pdf_bytes: bytes) -> dict | None:
+    """
+    Extract the embedded authoritative cryptographic certificate package
+    from a certificate PDF.
+    """
+    # 1. Look for base64 encoded payload in /Subject
+    match = re.search(rb'/Subject\s*\(([A-Za-z0-9+/=]+)\)', pdf_bytes)
+    if match:
+        try:
+            b64_str = match.group(1).decode('ascii')
+            raw_bytes = base64.b64decode(b64_str.encode('ascii'))
+            data = json.loads(raw_bytes.decode('utf-8'))
+            if isinstance(data, dict):
+                return data
+        except Exception as e:
+            print(f"[pdf_generator] Error decoding base64 metadata: {e}")
+
+    # 2. Fallback: look for direct JSON payload in /Subject
+    match2 = re.search(rb'/Subject\s*\((.*?)\)', pdf_bytes)
+    if match2:
+        try:
+            raw = match2.group(1).decode('utf-8', errors='ignore')
+            data = json.loads(raw)
+            if isinstance(data, dict):
+                return data
+        except Exception:
+            pass
+
+    return None

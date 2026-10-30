@@ -7,7 +7,7 @@
     "issue_date": "01 October 2026"
   },
   "sha256_hash": "b7ee0bf40477bbcd093fb2bf3941557c4873808057775933b6469a7e033a3979",
-  "signature": "gsmnfeosjuPYE0od+Y/4dNNOEYwlVcWtyLAZtypL/eZRsXEQDOHUDdQZpwkD6h7i29fNmBzmstufYfJkKTmnpWAFTTPClHiIXtk7amAa1Gjsm7t0G4X7SId/3UtD/FUc43hn8SiOdFx8jnOrYiybxTwAb7+hgSCcYRJw9XcLSD52wa5yPiVdYQhDzx2zL4dPju0EUezjcLWW19b683xSyo0tS7JSB2DmH0mXOiKDx0wfJZWGRIhkAW7gHlVn4kqQKhvnSVVZ4sg20gDboBPMGVrhVn1kCVA9bt2Z0Jd8GPqqOsXmV1A3I1odItMVylXQFMN3x/NVLa2Smp5DAnEY7Q==",
+  "signature": "Qz2jCUYgqK3zqTvCnvrg958epfL+nTyfWiALZFhepvMC0jo/8EEXiy4fty6Rt3w372BAkUTuzcdorFa0etKQ+wk5bn3jrDVobQf/qvLu+moEsP1ZOqnQsaB8Dabfy/3DPd5JOm1c+p8mV60Fh/quMZNpicccCwCUepW7UgtROIawgIe7zRF4+cGcTxra4b8MNEZ+d3HEx1jICETSNgTlSP3buGiQadoNvdsP9tl7bDYBzVp8Lx0+k2S1piHHQjwTUxz+PZcdyWnZT+n+BNBe/KULyF46aS8V7v+BfJBWzCkJYe4dxsokWzbSOerp0K+IR1zbX/ta36RbzstdLFRDiA==",
   "issuer_id": "VemanaIT-CA-2026",
   "canonical_json": "{\"cert_id\":\"CERT-2026-001\",\"course\":\"Bachelor of Engineering in Information Science and Engineering\",\"institution\":\"Vemana Institute of Technology\",\"issue_date\":\"01 October 2026\",\"student_name\":\"Fake Student\"}"
 }

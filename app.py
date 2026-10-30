@@ -24,7 +24,7 @@ from certificate_service import (
     verify_certificate,
     VerificationResult,
 )
-from pdf_generator import generate_certificate_pdf
+from pdf_generator import generate_certificate_pdf, extract_certificate_from_pdf
 
 # ─── App Initialisation & Lifespan ────────────────────────────────────────────
 BASE_DIR = Path(__file__).parent
@@ -218,13 +218,23 @@ async def verify_post(
             if len(content) > 10_000_000:  # 10 MB limit
                 raise ValueError("Uploaded PDF file is too large (maximum allowed size is 10 MB).")
 
-            # Accurately distinguish unsigned visual PDFs from genuine digital signatures
-            # We do NOT pretend that an ordinary unsigned PDF has a verified digital signature.
-            error_msg = (
-                "The uploaded PDF is a visual document without an embedded cryptographic digital signature. "
-                "In accordance with digital security standards, please upload the authoritative "
-                "signed JSON certificate package (.json) to verify the RSA-2048 digital signature and cryptographic data integrity."
-            )
+            # Extract embedded cryptographic digital signature metadata
+            extracted = extract_certificate_from_pdf(content)
+            if extracted:
+                cert_block = extracted.get("certificate", extracted)
+                required_fields = ["cert_id", "student_name", "course", "institution", "issue_date"]
+                for field in required_fields:
+                    if field not in cert_block:
+                        raise ValueError(f"Missing required field in certificate PDF metadata: '{field}'")
+
+                # Execute genuine cryptographic verification against SQLite trusted registry
+                result = verify_certificate(cert_block, db_path=DB_PATH)
+            else:
+                error_msg = (
+                    "The uploaded PDF does not contain an embedded cryptographic digital signature. "
+                    "Only verified academic certificates issued by Vemana Institute of Technology "
+                    "contain the authentic RSA-2048 / SHA-256 digital signature."
+                )
 
         else:
             raise ValueError("Unsupported file format. Please upload a signed certificate package (.json) or certificate document (.pdf).")
@@ -314,6 +324,7 @@ async def issue_post(
                 label             = "VALID",
                 sha256_hash       = result_data["sha256_hash"],
                 canonical_json_ref= f"{cert.cert_id}.json",
+                signature_b64     = result_data["signature_b64"],
             )
             json_path = samples_dir / f"{cert.cert_id}.json"
             json_package = {
@@ -385,6 +396,7 @@ async def download_certificate_pdf(cert_id: str, request: Request):
                 label             = "REVOKED" if cert["revoked"] else "VALID",
                 sha256_hash       = cert["sha256_hash"],
                 canonical_json_ref= f"{cert_id}.json",
+                signature_b64     = base64.b64encode(cert["signature"]).decode("utf-8"),
             )
 
     return FileResponse(
