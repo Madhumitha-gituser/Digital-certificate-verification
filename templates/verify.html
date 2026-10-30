@@ -1,223 +1,282 @@
 {% extends "base.html" %}
-{% block title %}Verify Certificate{% endblock %}
+{% block title %}Verify Certificate — CertVerify{% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-lg-9">
+        <div class="col-lg-8">
 
-            <h2 class="fw-bold mb-1" style="color:#0b192c;">
-                <i class="bi bi-patch-check me-2"></i>Certificate Verification
-            </h2>
-            <p class="text-muted mb-4">
-                Upload a signed JSON certificate package, or enter the certificate details manually.
-            </p>
+            <!-- Page Header -->
+            <div class="text-center mb-4">
+                <h2 class="fw-bold mb-2" style="color:#0b192c; font-size:1.85rem;">
+                    <i class="bi bi-shield-check me-2" style="color:#1565c0;"></i>Verify Your Certificate
+                </h2>
+                <p class="text-muted" style="font-size:1rem;">
+                    Upload your academic certificate to verify its authenticity.
+                </p>
+            </div>
 
+            <!-- Error Message -->
             {% if error_msg %}
-            <div class="alert alert-danger">
-                <i class="bi bi-exclamation-triangle me-2"></i>{{ error_msg }}
+            <div class="alert d-flex align-items-center gap-2 mb-4" style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; color:#b91c1c;">
+                <i class="bi bi-exclamation-circle-fill fs-5 flex-shrink-0"></i>
+                <div>{{ error_msg }}</div>
             </div>
             {% endif %}
 
             <!-- ── Verification Result Panel ── -->
             {% if result %}
             {% set status = result.status %}
-            {% set panel_class = {
-                'VALID':     'result-valid',
-                'INVALID':   'result-invalid',
-                'NOT_FOUND': 'result-notfound',
-                'REVOKED':   'result-revoked',
-            }.get(status, 'result-notfound') %}
-            {% set icon = {
-                'VALID':     'bi-check-circle-fill text-success',
-                'INVALID':   'bi-x-circle-fill text-danger',
-                'NOT_FOUND': 'bi-question-circle-fill text-warning',
-                'REVOKED':   'bi-slash-circle-fill text-purple',
-            }.get(status, 'bi-question-circle-fill') %}
-            {% set label_class = {
-                'VALID':     'badge-valid',
-                'INVALID':   'badge-invalid',
-                'NOT_FOUND': 'badge-notfound',
-                'REVOKED':   'badge-revoked',
-            }.get(status, 'badge-notfound') %}
 
-            <div class="card mb-4 {{ panel_class }}">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="bi {{ icon }} me-3" style="font-size:2.5rem;"></i>
-                        <div>
-                            <span class="badge {{ label_class }} fs-6 px-3 py-2">{{ status }}</span>
-                            <div class="mt-1 small text-muted">Certificate ID: <strong>{{ result.cert_id }}</strong></div>
-                        </div>
-                    </div>
+            <div class="card mb-4 border-0 shadow-sm" id="result-panel" style="border-radius:14px; overflow:hidden;">
 
-                    <!-- Explanation box -->
-                    <div class="alert alert-light border mb-3">
-                        {{ result.explanation }}
-                    </div>
+                {% if status == 'VALID' %}
+                <!-- A. VALID -->
+                <div class="card-body p-0">
+                    <div style="background:#f0fdf4; border-left:6px solid #16a34a; padding:1.75rem 2rem;">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <i class="bi bi-check-circle-fill" style="font-size:2.5rem; color:#16a34a; flex-shrink:0;"></i>
+                            <div>
+                                <h4 class="fw-bold mb-1 text-dark">Certificate Verified Successfully</h4>
+                                <div class="text-muted small">Cryptographic signature and authoritative registry checks passed.</div>
+                            </div>
+                        </div>
 
-                    <!-- Certificate fields -->
-                    <div class="row g-2">
-                        <div class="col-md-6">
-                            <table class="table table-sm table-borderless mb-0">
-                                <tr>
-                                    <th class="text-muted fw-normal" style="width:40%;">Student Name</th>
-                                    <td class="fw-bold">{{ result.student_name }}</td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted fw-normal">Course</th>
-                                    <td>{{ result.course }}</td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted fw-normal">Institution</th>
-                                    <td>{{ result.institution }}</td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted fw-normal">Issue Date</th>
-                                    <td>{{ result.issue_date }}</td>
-                                </tr>
-                            </table>
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #bbf7d0;">
+                                    <div class="text-muted small mb-1">Certificate ID</div>
+                                    <div class="fw-bold text-dark">{{ result.cert_id }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #bbf7d0;">
+                                    <div class="text-muted small mb-1">Student Name</div>
+                                    <div class="fw-bold text-dark">{{ result.student_name }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #bbf7d0;">
+                                    <div class="text-muted small mb-1">Institution</div>
+                                    <div class="fw-bold text-dark">{{ result.institution }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #bbf7d0;">
+                                    <div class="text-muted small mb-1">Issue Date</div>
+                                    <div class="fw-bold text-dark">{{ result.issue_date }}</div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #bbf7d0;">
+                                    <div class="text-muted small mb-1">Digital Signature Status</div>
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            {% if result.signature_valid %}
+                                            <span class="badge" style="background:#16a34a; font-size:0.88rem; padding:0.45rem 0.8rem;">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Verified (RSA-2048 / SHA-256)
+                                            </span>
+                                            <span class="text-muted small ms-2">Signature matches trusted issuer public key.</span>
+                                            {% else %}
+                                            <span class="badge" style="background:#dc2626; font-size:0.88rem; padding:0.45rem 0.8rem;">
+                                                <i class="bi bi-x-circle-fill me-1"></i>Unverified
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        <a href="/download/pdf/{{ result.cert_id }}" target="_blank" class="btn btn-sm btn-outline-success fw-semibold">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>View / Download PDF Certificate
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <table class="table table-sm table-borderless mb-0">
-                                <tr>
-                                    <th class="text-muted fw-normal" style="width:50%;">Signature Check</th>
-                                    <td>
-                                        {% if result.signature_valid is none %}
-                                            <span class="badge bg-secondary">N/A</span>
-                                        {% elif result.signature_valid %}
-                                            <span class="badge bg-success"><i class="bi bi-check me-1"></i>VALID</span>
-                                        {% else %}
-                                            <span class="badge bg-danger"><i class="bi bi-x me-1"></i>FAILED</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted fw-normal">Data Integrity</th>
-                                    <td>
-                                        {% if result.data_integrity is none %}
-                                            <span class="badge bg-secondary">N/A</span>
-                                        {% elif result.data_integrity %}
-                                            <span class="badge bg-success"><i class="bi bi-check me-1"></i>MATCHES</span>
-                                        {% else %}
-                                            <span class="badge bg-danger"><i class="bi bi-x me-1"></i>MISMATCH</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% if result.revoke_reason %}
-                                <tr>
-                                    <th class="text-muted fw-normal">Revoke Reason</th>
-                                    <td class="text-danger">{{ result.revoke_reason }}</td>
-                                </tr>
-                                {% endif %}
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- What this means (educational) -->
-                    <div class="mt-3">
-                        {% if status == 'VALID' %}
-                        <div class="alert alert-success mb-0 small">
-                            <strong>🔒 How this passed:</strong> The certificate data was converted to canonical JSON,
-                            its SHA-256 hash was compared to the trusted record, and the RSA-PSS signature
-                            (created with the issuer's private key) was verified using the public key. All checks passed.
-                        </div>
-                        {% elif status == 'INVALID' %}
-                        <div class="alert alert-danger mb-0 small">
-                            <strong>🔓 Why this failed:</strong> At least one certificate field does not match the
-                            trusted database record, or the RSA-PSS signature check failed. This indicates the
-                            certificate data was modified after it was originally signed.
-                        </div>
-                        {% elif status == 'NOT_FOUND' %}
-                        <div class="alert alert-warning mb-0 small">
-                            <strong>❓ Why this was rejected:</strong> The Certificate ID is not registered in the
-                            trusted database. This certificate was not issued by our system, or it was never
-                            registered. This is <em>different</em> from TAMPERED — we simply have no record of it.
-                        </div>
-                        {% elif status == 'REVOKED' %}
-                        <div class="alert alert-secondary mb-0 small">
-                            <strong>🚫 Why this was rejected:</strong> This certificate exists in the database but
-                            has been explicitly revoked by an administrator. It is no longer considered valid.
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
+
+                {% elif status == 'INVALID' %}
+                <!-- B. INVALID / TAMPERED -->
+                <div class="card-body p-0">
+                    <div style="background:#fef2f2; border-left:6px solid #dc2626; padding:1.75rem 2rem;">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <i class="bi bi-x-circle-fill" style="font-size:2.5rem; color:#dc2626; flex-shrink:0;"></i>
+                            <div>
+                                <h4 class="fw-bold mb-1 text-dark">Invalid Certificate</h4>
+                                <div class="text-danger small fw-semibold">The digital signature does not match the certificate data.</div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-light border mb-3 text-secondary small">
+                            {{ result.explanation }}
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #fecaca;">
+                                    <div class="text-muted small mb-1">Certificate ID</div>
+                                    <div class="fw-bold text-dark">{{ result.cert_id }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #fecaca;">
+                                    <div class="text-muted small mb-1">Submitted Student Name</div>
+                                    <div class="fw-bold text-dark">{{ result.student_name }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #fecaca;">
+                                    <div class="text-muted small mb-1">Signature Verification</div>
+                                    <span class="badge bg-danger"><i class="bi bi-x me-1"></i>FAILED</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #fecaca;">
+                                    <div class="text-muted small mb-1">Data Integrity</div>
+                                    <span class="badge bg-danger"><i class="bi bi-x me-1"></i>MISMATCH</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% elif status == 'NOT_FOUND' %}
+                <!-- C. UNKNOWN -->
+                <div class="card-body p-0">
+                    <div style="background:#fffbeb; border-left:6px solid #d97706; padding:1.75rem 2rem;">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <i class="bi bi-question-circle-fill" style="font-size:2.5rem; color:#d97706; flex-shrink:0;"></i>
+                            <div>
+                                <h4 class="fw-bold mb-1 text-dark">Certificate Not Found</h4>
+                                <div class="text-muted small">The certificate is not registered in the trusted database.</div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-light border mb-3 text-secondary small">
+                            {{ result.explanation }}
+                        </div>
+
+                        <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #fde68a;">
+                            <div class="text-muted small mb-1">Queried Certificate ID</div>
+                            <div class="fw-bold text-dark">{{ result.cert_id }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {% elif status == 'REVOKED' %}
+                <!-- D. REVOKED -->
+                <div class="card-body p-0">
+                    <div style="background:#faf5ff; border-left:6px solid #9333ea; padding:1.75rem 2rem;">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <i class="bi bi-slash-circle-fill" style="font-size:2.5rem; color:#9333ea; flex-shrink:0;"></i>
+                            <div>
+                                <h4 class="fw-bold mb-1 text-dark">Certificate Revoked</h4>
+                                <div class="text-muted small">The certificate has been revoked by the issuing authority.</div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-light border mb-3 text-secondary small">
+                            {{ result.explanation }}
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #e9d5ff;">
+                                    <div class="text-muted small mb-1">Certificate ID</div>
+                                    <div class="fw-bold text-dark">{{ result.cert_id }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #e9d5ff;">
+                                    <div class="text-muted small mb-1">Student Name</div>
+                                    <div class="fw-bold text-dark">{{ result.student_name }}</div>
+                                </div>
+                            </div>
+                            {% if result.revoke_reason %}
+                            <div class="col-12">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #e9d5ff;">
+                                    <div class="text-muted small mb-1">Revocation Reason</div>
+                                    <div class="text-danger small fw-semibold">{{ result.revoke_reason }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+
+            <!-- Verify Another Certificate Button -->
+            <div class="text-center mb-4">
+                <a href="/verify" class="btn btn-outline-secondary px-4 py-2" style="border-radius:8px; font-weight:600;">
+                    <i class="bi bi-arrow-counterclockwise me-2"></i>Verify Another Certificate
+                </a>
             </div>
             {% endif %}
 
             <!-- ── Upload Form ── -->
-            <div class="card shadow-sm border-0">
-                <div class="card-header" style="background:#0b192c; color:white;">
-                    <h5 class="mb-0"><i class="bi bi-upload me-2"></i>Upload Certificate Package</h5>
-                </div>
-                <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Upload Signed JSON File</label>
-                            <input type="file" name="json_file" class="form-control" accept=".json">
-                            <div class="form-text">
-                                Upload the <code>.json</code> file from <code>sample_certificates/</code>.
-                                This contains the certificate data and digital signature.
-                            </div>
-                        </div>
+            <div class="card border-0 shadow-sm" id="upload-section" style="border-radius:14px; background:#ffffff;">
+                <div class="card-body p-4 p-md-5">
+                    <form method="post" enctype="multipart/form-data" id="verify-form" onsubmit="showLoading()">
 
-                        <div class="text-center my-3 text-muted">— or enter fields manually —</div>
-
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Certificate ID</label>
-                                <input type="text" name="cert_id" class="form-control"
-                                       placeholder="e.g. CERT-2026-001"
-                                       value="{{ submitted.cert_id if submitted else '' }}">
+                        <!-- Drag & Drop Area -->
+                        <div id="drop-zone"
+                             style="border: 2px dashed #cbd5e1; border-radius:12px; padding:3rem 2rem; text-align:center; cursor:pointer; transition:all 0.2s ease; background:#f8fafc;"
+                             onclick="document.getElementById('certificate_file_input').click()"
+                             ondragover="handleDragOver(event)"
+                             ondragleave="handleDragLeave(event)"
+                             ondrop="handleDrop(event)">
+                            <i class="bi bi-cloud-arrow-up" style="font-size:2.75rem; color:#64748b; display:block; margin-bottom:1rem;"></i>
+                            <div class="fw-bold text-dark mb-1" style="font-size:1.1rem;">Drag &amp; Drop your certificate here</div>
+                            <div class="text-muted small mb-3">Upload signed certificate packages (.json) or visual documents (.pdf)</div>
+                            <div style="display:flex; align-items:center; gap:1rem; justify-content:center; margin-bottom:1.25rem;">
+                                <div style="height:1px; width:60px; background:#e2e8f0;"></div>
+                                <span class="text-muted small">or</span>
+                                <div style="height:1px; width:60px; background:#e2e8f0;"></div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Student Name</label>
-                                <input type="text" name="student_name" class="form-control"
-                                       placeholder="e.g. Ananya Sharma"
-                                       value="{{ submitted.student_name if submitted else '' }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Course</label>
-                                <input type="text" name="course" class="form-control"
-                                       placeholder="e.g. B.E. Information Science"
-                                       value="{{ submitted.course if submitted else '' }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Institution</label>
-                                <input type="text" name="institution" class="form-control"
-                                       placeholder="e.g. Demo Engineering College"
-                                       value="{{ submitted.institution if submitted else '' }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Issue Date</label>
-                                <input type="text" name="issue_date" class="form-control"
-                                       placeholder="e.g. 01 October 2026"
-                                       value="{{ submitted.issue_date if submitted else '' }}">
-                            </div>
-                        </div>
-
-                        <div class="mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-patch-check me-2"></i>Verify Certificate
+                            <button type="button"
+                                    onclick="event.stopPropagation(); document.getElementById('certificate_file_input').click()"
+                                    style="background:#0b192c; color:#ffffff; border:none; border-radius:8px; padding:0.6rem 1.5rem; font-weight:600; font-size:0.92rem; cursor:pointer; transition:background 0.2s;">
+                                <i class="bi bi-folder2-open me-2"></i>Browse Files
                             </button>
-                            <a href="/verify" class="btn btn-outline-secondary btn-lg ms-2">
-                                <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
-                            </a>
                         </div>
-                    </form>
-                </div>
-            </div>
 
-            <!-- Quick links to samples -->
-            <div class="card mt-3">
-                <div class="card-body py-2 px-3">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Download sample files from the
-                        <a href="/">Home page</a> or
-                        <code>sample_certificates/</code> folder after running
-                        <code>python generate_samples.py</code>.
-                    </small>
+                        <!-- Hidden File Input -->
+                        <input type="file" id="certificate_file_input" name="certificate_file" accept=".json,.pdf" style="display:none;" onchange="updateFilename(this)">
+
+                        <!-- Selected Filename Display -->
+                        <div id="filename-display" style="display:none; margin-top:1.25rem; padding:0.85rem 1.1rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-file-earmark-check text-success fs-5"></i>
+                                    <div>
+                                        <div id="filename-text" class="text-dark fw-semibold small"></div>
+                                        <div id="filetype-badge" class="text-muted" style="font-size:0.75rem;"></div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="clearFile()" class="btn btn-sm btn-link text-muted p-0 text-decoration-none" title="Remove file">
+                                    <i class="bi bi-x-circle fs-5"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Clear Loading Indicator -->
+                        <div id="loading-indicator" style="display:none; text-align:center; margin-top:1.5rem; padding:1rem; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">
+                            <div class="spinner-border text-primary" style="width:2.2rem; height:2.2rem;" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div class="fw-semibold text-dark mt-2">Verifying Certificate Authenticity...</div>
+                            <div class="text-muted small">Checking RSA digital signature and trusted registry</div>
+                        </div>
+
+                        <!-- Verify Certificate Button -->
+                        <div class="mt-4 text-center">
+                            <button type="submit" id="verify-btn"
+                                    style="background:#0b192c; color:#ffffff; border:none; border-radius:10px; padding:0.85rem 2.75rem; font-weight:700; font-size:1rem; cursor:pointer; transition:background 0.2s; min-width:240px; box-shadow:0 4px 12px rgba(11,25,44,0.15);">
+                                <i class="bi bi-shield-check me-2"></i>Verify Certificate
+                            </button>
+                        </div>
+
+                    </form>
                 </div>
             </div>
 
@@ -226,3 +285,90 @@
 </div>
 {% endblock %}
 
+{% block scripts %}
+<script>
+function updateFilename(input) {
+    const display = document.getElementById('filename-display');
+    const text = document.getElementById('filename-text');
+    const badge = document.getElementById('filetype-badge');
+    const dropZone = document.getElementById('drop-zone');
+
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        text.textContent = file.name;
+        if (file.name.endsWith('.json')) {
+            badge.textContent = "Authoritative Signed JSON Package (" + (file.size / 1024).toFixed(1) + " KB)";
+        } else if (file.name.endsWith('.pdf')) {
+            badge.textContent = "Certificate PDF Document (" + (file.size / 1024).toFixed(1) + " KB)";
+        } else {
+            badge.textContent = (file.size / 1024).toFixed(1) + " KB";
+        }
+        display.style.display = 'block';
+        dropZone.style.borderColor = '#16a34a';
+        dropZone.style.background = '#f0fdf4';
+    } else {
+        display.style.display = 'none';
+        dropZone.style.borderColor = '#cbd5e1';
+        dropZone.style.background = '#f8fafc';
+    }
+}
+
+function clearFile() {
+    const input = document.getElementById('certificate_file_input');
+    input.value = '';
+    document.getElementById('filename-display').style.display = 'none';
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.style.borderColor = '#cbd5e1';
+    dropZone.style.background = '#f8fafc';
+}
+
+function handleDragOver(event) {
+    event.preventDefault();
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.style.borderColor = '#2563eb';
+    dropZone.style.background = '#eff6ff';
+}
+
+function handleDragLeave(event) {
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.style.borderColor = '#cbd5e1';
+    dropZone.style.background = '#f8fafc';
+}
+
+function handleDrop(event) {
+    event.preventDefault();
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.style.borderColor = '#cbd5e1';
+    dropZone.style.background = '#f8fafc';
+
+    const files = event.dataTransfer.files;
+    if (files && files[0]) {
+        const input = document.getElementById('certificate_file_input');
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(files[0]);
+        input.files = dataTransfer.files;
+        updateFilename(input);
+    }
+}
+
+function showLoading() {
+    const input = document.getElementById('certificate_file_input');
+    if (input.files && input.files.length > 0) {
+        const btn = document.getElementById('verify-btn');
+        const loading = document.getElementById('loading-indicator');
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Verifying...';
+        loading.style.display = 'block';
+    }
+}
+
+// Auto scroll to result if displayed
+document.addEventListener('DOMContentLoaded', function() {
+    const resultPanel = document.getElementById('result-panel');
+    if (resultPanel) {
+        resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+});
+</script>
+{% endblock %}

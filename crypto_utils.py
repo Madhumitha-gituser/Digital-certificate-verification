@@ -53,7 +53,7 @@ INSTANCE_DIR = BASE_DIR / "instance"
 PRIVATE_KEY_PATH = INSTANCE_DIR / "private_key.pem"
 PUBLIC_KEY_PATH = INSTANCE_DIR / "public_key.pem"
 
-KEY_ISSUER_ID = "DemoEngineeringCollege-CA-2026"
+KEY_ISSUER_ID = "VemanaIT-CA-2026"
 
 
 def ensure_instance_dir() -> None:

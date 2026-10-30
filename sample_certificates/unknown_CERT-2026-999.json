@@ -2,13 +2,12 @@
   "certificate": {
     "cert_id": "CERT-2026-999",
     "student_name": "Rahul Kumar",
-    "course": "B.E. Computer Science and Engineering",
-    "institution": "Unknown Private Institute",
+    "course": "Bachelor of Engineering in Computer Science and Engineering",
+    "institution": "Vemana Institute of Technology",
     "issue_date": "15 March 2026"
   },
-  "sha256_hash": "0cce7f147aa02997ac79140f1fb5d69153f1ba646dfbc5343793860458ee12a4",
-  "signature": "UNSIGNED_NOT_FROM_TRUSTED_ISSUER",
+  "sha256_hash": "5c1daee07f585609dbd72518d7a18c75e06aa313a9eae3e655fb8c65bf4cfdf4",
+  "signature": "UNSIGNED_NOT_IN_TRUSTED_DATABASE",
   "issuer_id": "UNKNOWN_ISSUER",
-  "canonical_json": "{\"cert_id\":\"CERT-2026-999\",\"course\":\"B.E. Computer Science and Engineering\",\"institution\":\"Unknown Private Institute\",\"issue_date\":\"15 March 2026\",\"student_name\":\"Rahul Kumar\"}",
-  "_demo_note": "UNKNOWN: This certificate ID is not registered in the trusted database. Verification result will be NOT_FOUND."
+  "canonical_json": "{\"cert_id\":\"CERT-2026-999\",\"course\":\"Bachelor of Engineering in Computer Science and Engineering\",\"institution\":\"Vemana Institute of Technology\",\"issue_date\":\"15 March 2026\",\"student_name\":\"Rahul Kumar\"}"
 }

@@ -1,246 +1,207 @@
 """
-pdf_generator.py — Generate Certificate PDFs using ReportLab
-
-============================================================
-BEGINNER'S GUIDE
-============================================================
-ReportLab is a Python library that creates PDF files programmatically.
-We use it to draw text, lines, and shapes onto a "canvas" (like a
-virtual page), then save it as a PDF.
-
-The PDF is a VISUAL REPRESENTATION of the certificate.
-The JSON signed-data file is the AUTHORITATIVE CRYPTOGRAPHIC RECORD.
-
-IMPORTANT: We do NOT use PDF digital signatures (that requires
-separate infrastructure like Adobe Acrobat's signing). Instead, we
-include a visible QR-code text / verification note in the PDF, and
-the actual cryptographic proof lives in the companion .json file.
-
-The PDF includes an "EDUCATIONAL DEMO" warning as required.
-============================================================
+pdf_generator.py — Generate Academic Certificates using ReportLab (Landscape A4)
 """
 
-import textwrap
 from pathlib import Path
-from datetime import datetime
-
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import cm
-from reportlab.lib.colors import HexColor, white, black
+from reportlab.lib.pagesizes import landscape, A4
+from reportlab.lib.colors import HexColor, white
 from reportlab.pdfgen import canvas as pdf_canvas
 
 
 # ─── Color Palette ────────────────────────────────────────────────────────────
-DARK_BLUE   = HexColor("#1a237e")   # Header background
-GOLD        = HexColor("#ffd700")   # Accent / border
-LIGHT_GRAY  = HexColor("#f5f5f5")   # Body background
-RED_WARNING = HexColor("#c62828")   # Warning banner
-MED_BLUE    = HexColor("#283593")   # Sub-heading
+NAVY_PRIMARY   = HexColor("#0b192c")   # Deep navy for institutional text
+NAVY_ACCENT    = HexColor("#1e3e62")   # Secondary navy for titles & courses
+GOLD_METALLIC  = HexColor("#c5a059")   # Antique gold for formal borders & seals
+TEXT_DARK      = HexColor("#1e293b")   # Body text dark slate
+TEXT_MUTED     = HexColor("#64748b")   # Secondary muted text
+BG_PARCHMENT   = HexColor("#fdfdfb")   # Crisp subtle parchment ivory
 
 
 def generate_certificate_pdf(
     cert_id: str,
     student_name: str,
     course: str,
-    institution: str,
-    issue_date: str,
-    output_path: Path,
-    label: str = "VALID",          # "VALID", "TAMPERED", "UNKNOWN"
-    sha256_hash: str = "",         # first 32 chars shown in PDF
-    canonical_json_ref: str = "",  # filename of the companion .json
+    institution: str = "Vemana Institute of Technology",
+    issue_date: str = "01 October 2026",
+    output_path: Path = None,
+    label: str = "VALID",
+    sha256_hash: str = "",
+    canonical_json_ref: str = "",
 ) -> Path:
     """
-    Generate a certificate PDF.
+    Generate a professional, perfectly aligned landscape academic certificate.
 
-    Parameters
-    ----------
-    cert_id          : Certificate unique identifier
-    student_name     : Recipient's name (what is displayed on the PDF)
-    course           : Academic programme
-    institution      : Issuing institution name
-    issue_date       : Human-readable date string
-    output_path      : Where to save the PDF
-    label            : Badge label shown at the top-right ("VALID", "TAMPERED", "UNKNOWN")
-    sha256_hash      : First 32 characters of the SHA-256 hash (displayed for reference)
-    canonical_json_ref : Filename of the companion signed JSON (for verification link)
-
-    Returns the output_path on success.
+    Layout:
+      - Orientation: Landscape A4 (841.89 x 595.28 pt)
+      - Hierarchy: College Name -> Department -> Degree Award -> Recipient -> Signatures -> Security Seal
     """
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    c = pdf_canvas.Canvas(str(output_path), pagesize=A4)
-    width, height = A4   # 595.27 x 841.89 points
+    c = pdf_canvas.Canvas(str(output_path), pagesize=landscape(A4))
+    width, height = landscape(A4)
+    cx = width / 2.0  # Center X: 420.95 pt
 
-    # ── Background ────────────────────────────────────────────────────────────
-    c.setFillColor(LIGHT_GRAY)
+    # 1. Background
+    c.setFillColor(BG_PARCHMENT)
     c.rect(0, 0, width, height, fill=1, stroke=0)
 
-    # ── Gold border frame ─────────────────────────────────────────────────────
-    margin = 1.2 * cm
-    c.setStrokeColor(GOLD)
-    c.setLineWidth(6)
-    c.rect(margin, margin, width - 2 * margin, height - 2 * margin, fill=0, stroke=1)
-    c.setLineWidth(2)
-    inner = margin + 0.3 * cm
-    c.rect(inner, inner, width - 2 * inner, height - 2 * inner, fill=0, stroke=1)
+    # 2. Triple Border (Navy outer, Gold middle, Navy inner)
+    outer_m = 22.0
+    c.setStrokeColor(NAVY_PRIMARY)
+    c.setLineWidth(1.5)
+    c.rect(outer_m, outer_m, width - 2 * outer_m, height - 2 * outer_m, fill=0, stroke=1)
 
-    # ── Dark blue header band ─────────────────────────────────────────────────
-    header_top    = height - margin
-    header_bottom = height - 5.5 * cm
-    c.setFillColor(DARK_BLUE)
-    c.rect(margin, header_bottom, width - 2 * margin, header_top - header_bottom, fill=1, stroke=0)
+    gold_m = outer_m + 4.0
+    c.setStrokeColor(GOLD_METALLIC)
+    c.setLineWidth(3.0)
+    c.rect(gold_m, gold_m, width - 2 * gold_m, height - 2 * gold_m, fill=0, stroke=1)
 
-    # ── Educational Demo Warning Banner ───────────────────────────────────────
-    # Required on all PDFs (per project spec)
-    c.setFillColor(RED_WARNING)
-    c.rect(margin, header_top - 0.9 * cm, width - 2 * margin, 0.85 * cm, fill=1, stroke=0)
-    c.setFillColor(white)
-    c.setFont("Helvetica-Bold", 9)
-    warning_text = "⚠  EDUCATIONAL DEMO — NOT AN OFFICIAL CERTIFICATE  ⚠"
-    c.drawCentredString(width / 2, header_top - 0.65 * cm, warning_text)
+    inner_m = gold_m + 4.0
+    c.setStrokeColor(NAVY_PRIMARY)
+    c.setLineWidth(0.75)
+    c.rect(inner_m, inner_m, width - 2 * inner_m, height - 2 * inner_m, fill=0, stroke=1)
 
-    # ── Header: Institution name ───────────────────────────────────────────────
-    c.setFillColor(GOLD)
-    c.setFont("Helvetica-Bold", 20)
-    c.drawCentredString(width / 2, height - 3.8 * cm, institution.upper())
-
-    c.setFillColor(white)
-    c.setFont("Helvetica", 11)
-    c.drawCentredString(width / 2, height - 4.5 * cm,
-                        "Department of Information Science and Engineering")
-
-    # ── Status Badge (top-right) ───────────────────────────────────────────────
-    badge_colors = {
-        "VALID":    HexColor("#2e7d32"),  # green
-        "TAMPERED": HexColor("#b71c1c"),  # red
-        "UNKNOWN":  HexColor("#e65100"),  # orange
-    }
-    badge_color = badge_colors.get(label, HexColor("#616161"))
-    bx, by = width - margin - 3.5 * cm, height - margin - 1.5 * cm
-    c.setFillColor(badge_color)
-    c.roundRect(bx, by, 3.2 * cm, 1.0 * cm, radius=0.2 * cm, fill=1, stroke=0)
-    c.setFillColor(white)
-    c.setFont("Helvetica-Bold", 10)
-    c.drawCentredString(bx + 1.6 * cm, by + 0.3 * cm, label)
-
-    # ── "Certificate of Achievement" title ────────────────────────────────────
-    c.setFillColor(DARK_BLUE)
-    c.setFont("Helvetica-Bold", 26)
-    c.drawCentredString(width / 2, height - 7.5 * cm, "Certificate of Achievement")
-
-    c.setFillColor(MED_BLUE)
-    c.setFont("Helvetica-Oblique", 13)
-    c.drawCentredString(width / 2, height - 8.4 * cm,
-                        "This is to certify that")
-
-    # ── Student Name ──────────────────────────────────────────────────────────
-    c.setFillColor(DARK_BLUE)
-    c.setFont("Helvetica-Bold", 30)
-    c.drawCentredString(width / 2, height - 10.0 * cm, student_name)
-
-    # Underline under name
-    name_width = c.stringWidth(student_name, "Helvetica-Bold", 30)
-    c.setStrokeColor(GOLD)
-    c.setLineWidth(2)
-    c.line(width / 2 - name_width / 2, height - 10.3 * cm,
-           width / 2 + name_width / 2, height - 10.3 * cm)
-
-    # ── Course Text ───────────────────────────────────────────────────────────
-    c.setFillColor(black)
-    c.setFont("Helvetica", 13)
-    c.drawCentredString(width / 2, height - 11.2 * cm,
-                        "has successfully completed the programme")
-
-    c.setFillColor(MED_BLUE)
-    c.setFont("Helvetica-Bold", 16)
-    # Wrap long course names
-    wrapped = textwrap.fill(course, width=55)
-    lines = wrapped.split("\n")
-    y = height - 12.2 * cm
-    for line in lines:
-        c.drawCentredString(width / 2, y, line)
-        y -= 0.7 * cm
-
-    # ── Certificate Details Box ───────────────────────────────────────────────
-    box_top    = height - 16.0 * cm
-    box_bottom = height - 19.5 * cm
-    box_left   = 3.0 * cm
-    box_right  = width - 3.0 * cm
-
-    c.setFillColor(HexColor("#e8eaf6"))
-    c.roundRect(box_left, box_bottom, box_right - box_left,
-                box_top - box_bottom, radius=0.3 * cm, fill=1, stroke=0)
-    c.setStrokeColor(DARK_BLUE)
-    c.setLineWidth(1)
-    c.roundRect(box_left, box_bottom, box_right - box_left,
-                box_top - box_bottom, radius=0.3 * cm, fill=0, stroke=1)
-
-    details = [
-        ("Certificate ID", cert_id),
-        ("Issue Date",     issue_date),
-        ("Institution",    institution),
+    # Corner Accents (Small gold squares in the 4 corners)
+    corner_size = 6.0
+    c.setFillColor(GOLD_METALLIC)
+    corners = [
+        (inner_m + 2, inner_m + 2),
+        (width - inner_m - corner_size - 2, inner_m + 2),
+        (inner_m + 2, height - inner_m - corner_size - 2),
+        (width - inner_m - corner_size - 2, height - inner_m - corner_size - 2),
     ]
-    dy = box_top - 0.8 * cm
-    for label_text, value_text in details:
-        c.setFillColor(MED_BLUE)
-        c.setFont("Helvetica-Bold", 11)
-        c.drawString(box_left + 0.8 * cm, dy, f"{label_text}:")
-        c.setFillColor(black)
-        c.setFont("Helvetica", 11)
-        c.drawString(box_left + 5.5 * cm, dy, value_text)
-        dy -= 0.9 * cm
+    for x, y in corners:
+        c.rect(x, y, corner_size, corner_size, fill=1, stroke=0)
 
-    # ── SHA-256 Hash (truncated) for visual reference ──────────────────────────
+    # 3. Top Institution Header
+    inst_name = (institution or "Vemana Institute of Technology").strip()
+
+    c.setFillColor(TEXT_MUTED)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawCentredString(cx, 532, "KRISHNA CHETHANA EDUCATION TRUST ®")
+
+    c.setFillColor(NAVY_PRIMARY)
+    c.setFont("Times-Bold", 24)
+    c.drawCentredString(cx, 506, inst_name.upper())
+
+    c.setFillColor(TEXT_MUTED)
+    c.setFont("Times-Roman", 10)
+    c.drawCentredString(cx, 490, "Approved by AICTE, New Delhi & Affiliated to VTU, Belagavi")
+    c.setFont("Times-Roman", 9)
+    c.drawCentredString(cx, 477, "Koramangala, Bengaluru - 560034, Karnataka, India")
+
+    # Thin decorative divider line under header
+    c.setStrokeColor(GOLD_METALLIC)
+    c.setLineWidth(1.0)
+    c.line(cx - 160, 466, cx + 160, 466)
+    c.circle(cx, 466, 2.5, fill=1, stroke=0)
+
+    # 4. Department
+    c.setFillColor(NAVY_ACCENT)
+    c.setFont("Helvetica-Bold", 10.5)
+    c.drawCentredString(cx, 448, "DEPARTMENT OF INFORMATION SCIENCE & ENGINEERING")
+
+    # 5. Certificate Title
+    c.setFillColor(NAVY_PRIMARY)
+    c.setFont("Times-BoldItalic", 22)
+    c.drawCentredString(cx, 416, "Certificate of Academic Excellence")
+
+    # 6. Preamble text
+    c.setFillColor(TEXT_DARK)
+    c.setFont("Times-Italic", 12.5)
+    c.drawCentredString(cx, 386, "This is to certify that")
+
+    # 7. Student Name
+    c.setFillColor(NAVY_PRIMARY)
+    c.setFont("Times-Bold", 26)
+    c.drawCentredString(cx, 350, student_name)
+
+    # Refined underline below student name
+    name_w = c.stringWidth(student_name, "Times-Bold", 26)
+    c.setStrokeColor(GOLD_METALLIC)
+    c.setLineWidth(1.5)
+    c.line(cx - name_w / 2 - 15, 344, cx + name_w / 2 + 15, 344)
+
+    # 8. Body Award Text
+    c.setFillColor(TEXT_DARK)
+    c.setFont("Times-Roman", 12)
+    c.drawCentredString(cx, 318, "has successfully completed the prescribed curriculum and fulfilled the requirements for the award of")
+
+    # 9. Course / Degree Name
+    c.setFillColor(NAVY_ACCENT)
+    c.setFont("Times-Bold", 15)
+    c.drawCentredString(cx, 294, course)
+
+    # 10. Completion sentence
+    c.setFillColor(TEXT_DARK)
+    c.setFont("Times-Roman", 11.5)
+    date_text = f"and has been awarded this credential on {issue_date} with First Class Distinction."
+    c.drawCentredString(cx, 270, date_text)
+
+    # 11. Institutional Seal (Center at cx, y=165)
+    seal_y = 175
+    c.setStrokeColor(GOLD_METALLIC)
+    c.setLineWidth(1.8)
+    c.circle(cx, seal_y, 30, fill=0, stroke=1)
+    c.setLineWidth(0.8)
+    c.circle(cx, seal_y, 26, fill=0, stroke=1)
+
+    c.setFillColor(GOLD_METALLIC)
+    c.setFont("Helvetica-Bold", 6.5)
+    c.drawCentredString(cx, seal_y + 11, "VEMANA IT")
+    c.setFont("Times-Bold", 7.5)
+    c.drawCentredString(cx, seal_y - 1, "★ SEAL ★")
+    c.setFont("Helvetica-Bold", 6.5)
+    c.drawCentredString(cx, seal_y - 13, "VERIFIED")
+
+    # 12. Signatures (Left: HOD, Right: Principal)
+    sig_line_y = 160
+    sig_w = 150.0
+
+    # Left Signature: Head of Department
+    left_cx = 180.0
+    c.setStrokeColor(NAVY_PRIMARY)
+    c.setLineWidth(1.0)
+    c.line(left_cx - sig_w / 2, sig_line_y, left_cx + sig_w / 2, sig_line_y)
+
+    c.setFillColor(NAVY_PRIMARY)
+    c.setFont("Times-Bold", 11)
+    c.drawCentredString(left_cx, sig_line_y - 16, "Dr. H. N. Suresh")
+    c.setFillColor(TEXT_MUTED)
+    c.setFont("Times-Roman", 9)
+    c.drawCentredString(left_cx, sig_line_y - 28, "Head of Department (ISE)")
+
+    # Right Signature: Principal
+    right_cx = width - 180.0
+    c.setStrokeColor(NAVY_PRIMARY)
+    c.setLineWidth(1.0)
+    c.line(right_cx - sig_w / 2, sig_line_y, right_cx + sig_w / 2, sig_line_y)
+
+    c.setFillColor(NAVY_PRIMARY)
+    c.setFont("Times-Bold", 11)
+    c.drawCentredString(right_cx, sig_line_y - 16, "Dr. Vijayasimha Reddy")
+    c.setFillColor(TEXT_MUTED)
+    c.setFont("Times-Roman", 9)
+    c.drawCentredString(right_cx, sig_line_y - 28, "Principal")
+
+    # 13. Security & Verification Footer Strip
+    footer_divider_y = 74
+    c.setStrokeColor(HexColor("#e2e8f0"))
+    c.setLineWidth(0.8)
+    c.line(inner_m + 10, footer_divider_y, width - inner_m - 10, footer_divider_y)
+
+    c.setFillColor(TEXT_MUTED)
+    c.setFont("Helvetica-Bold", 8)
+    security_text = f"Certificate ID: {cert_id}   |   Digital Signature: RSA-2048 / SHA-256 PSS   |   Issuer: Vemana-IT-CA"
+    c.drawCentredString(cx, 56, security_text)
+
     if sha256_hash:
-        c.setFillColor(HexColor("#546e7a"))
-        c.setFont("Helvetica", 8)
-        short_hash = sha256_hash[:32] + "..."
-        c.drawString(box_left + 0.8 * cm, dy, f"Data Fingerprint (SHA-256): {short_hash}")
-        dy -= 0.6 * cm
+        c.setFont("Courier", 7)
+        c.setFillColor(HexColor("#94a3b8"))
+        digest_preview = f"Cryptographic Fingerprint: {sha256_hash[:40]}..."
+        c.drawCentredString(cx, 44, digest_preview)
 
-    # ── Companion JSON reference ───────────────────────────────────────────────
-    if canonical_json_ref:
-        c.setFont("Helvetica-Oblique", 8)
-        c.setFillColor(HexColor("#37474f"))
-        c.drawString(box_left + 0.8 * cm, dy,
-                     f"Signed data file: {canonical_json_ref}")
-
-    # ── Verification instruction ───────────────────────────────────────────────
-    c.setFillColor(HexColor("#4a148c"))
-    c.setFont("Helvetica-Bold", 9)
-    c.drawCentredString(
-        width / 2,
-        height - 20.5 * cm,
-        "To verify this certificate, upload the companion JSON file at the verification portal.",
-    )
-
-    # ── Signature lines ────────────────────────────────────────────────────────
-    sig_y = height - 23.0 * cm
-    sig_positions = [4.0 * cm, width / 2, width - 6.0 * cm]
-    sig_labels    = ["Principal", "Head of Department", "Registrar"]
-
-    for sx, slabel in zip(sig_positions, sig_labels):
-        c.setStrokeColor(DARK_BLUE)
-        c.setLineWidth(1)
-        c.line(sx, sig_y, sx + 4.5 * cm, sig_y)
-        c.setFillColor(MED_BLUE)
-        c.setFont("Helvetica", 9)
-        c.drawCentredString(sx + 2.25 * cm, sig_y - 0.5 * cm, slabel)
-
-    # ── Footer ────────────────────────────────────────────────────────────────
-    c.setFillColor(DARK_BLUE)
-    c.rect(margin, margin, width - 2 * margin, 1.2 * cm, fill=1, stroke=0)
-    c.setFillColor(white)
-    c.setFont("Helvetica", 8)
-    footer = (
-        "VTU Information and Network Security (INS) — BIS 703 | "
-        "Digital Certificate Verification System | Educational Demo"
-    )
-    c.drawCentredString(width / 2, margin + 0.4 * cm, footer)
-
-    # ── Finalise ──────────────────────────────────────────────────────────────
     c.save()
-    print(f"[pdf_generator] PDF saved → {output_path}")
+    print(f"[pdf_generator] Landscape PDF generated -> {output_path}")
     return output_path
-

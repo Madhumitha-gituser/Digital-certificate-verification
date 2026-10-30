@@ -1,41 +1,11 @@
 """
-app.py — FastAPI Web Application: Digital Certificate Verification System
-
-============================================================
-BEGINNER'S GUIDE
-============================================================
-FastAPI is a modern Python web framework that:
-  - Automatically validates request data using Python type hints.
-  - Auto-generates API documentation at /docs.
-  - Uses async functions for high performance.
-  - Renders HTML templates using Jinja2.
-
-KEY ROUTES:
-  GET  /              → Home page
-  GET  /about         → About / how it works page
-  GET  /issue         → Issue certificate form (admin only)
-  POST /issue         → Submit new certificate
-  GET  /certificates  → List all trusted certificates (admin only)
-  GET  /verify        → Upload JSON package for verification
-  POST /verify        → Process verification, show result
-  GET  /login         → Admin login form
-  POST /login         → Process login
-  GET  /logout        → Clear session
-  POST /revoke/{id}   → Revoke a certificate (admin only)
-
-SESSIONS:
-  We use a simple signed cookie (via Starlette's SessionMiddleware) to
-  track whether an admin is logged in.
-
-TEMPLATE ENGINE:
-  Jinja2 renders HTML templates from the templates/ folder.
-  The app passes data (like verification results) to templates as variables.
-============================================================
+app.py — FastAPI Web Application: Digital Certificate Verification System (CertVerify)
 """
 
 import json
 import base64
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -54,19 +24,32 @@ from certificate_service import (
     verify_certificate,
     VerificationResult,
 )
+from pdf_generator import generate_certificate_pdf
 
-# ─── App Initialisation ───────────────────────────────────────────────────────
+# ─── App Initialisation & Lifespan ────────────────────────────────────────────
 BASE_DIR = Path(__file__).parent
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Run once when the server starts: ensure keys and DB exist."""
+    print("[app] Starting CertVerify - Digital Certificate Verification System...")
+    try:
+        initialize_keys()
+    except RuntimeError as e:
+        print(f"[app] Key status: {e}")
+    init_db(DB_PATH)
+    print("[app] Server ready at http://127.0.0.1:8000")
+    yield
 
 app = FastAPI(
     title="CertVerify — Digital Certificate Verification System",
-    description="Educational demonstration of digital certificate verification using RSA-2048 and SHA-256.",
+    description="Academic Certificate Verification System using RSA-2048 and SHA-256.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
-# Session middleware: uses a secret key to sign cookies.
-# In production, use a long random secret from environment variables.
-SESSION_SECRET = os.environ.get("SESSION_SECRET", "ins-demo-secret-key-2026-change-in-prod")
+# Session middleware: uses a secret key to sign session cookies
+SESSION_SECRET = os.environ.get("SESSION_SECRET", "certverify-production-session-secret-key-2026")
 app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 
 # Static files (CSS, JS, images)
@@ -74,7 +57,7 @@ static_dir = BASE_DIR / "static"
 static_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-# Sample certificates served as downloadable files
+# Sample certificates directory
 samples_dir = BASE_DIR / "sample_certificates"
 samples_dir.mkdir(exist_ok=True)
 app.mount("/samples", StaticFiles(directory=str(samples_dir)), name="samples")
@@ -83,166 +66,37 @@ app.mount("/samples", StaticFiles(directory=str(samples_dir)), name="samples")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
-# ─── Startup: Init keys and DB ────────────────────────────────────────────────
+# ─── Helper: Auth Check ───────────────────────────────────────────────────────
 
-@app.on_event("startup")
-async def startup_event():
-    """Run once when the server starts: ensure keys and DB exist."""
-    print("[app] Starting Digital Certificate Verification System...")
-    try:
-        initialize_keys()
-    except RuntimeError as e:
-        print(f"[app] WARNING: Key initialisation issue: {e}")
-    init_db(DB_PATH)
-    print("[app] Server ready at http://127.0.0.1:8000")
-
-
-# ─── Helper: Admin Auth Check ─────────────────────────────────────────────────
-
-def is_admin(request: Request) -> bool:
-    """Return True if the current session has admin access."""
+def is_authenticated(request: Request) -> bool:
+    """Return True if the current session is authenticated."""
     return request.session.get("is_admin", False)
 
 
-def require_admin(request: Request):
-    """Raise 403 if not logged in as admin."""
-    if not is_admin(request):
-        raise HTTPException(status_code=403, detail="Admin access required. Please log in.")
-
-
 # ═══════════════════════════════════════════════════════════════════════════════
-# PUBLIC ROUTES
+# 1. FIRST PAGE — SIMPLE LOGIN PAGE & AUTHENTICATION
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    """Home page: explains the project and provides navigation."""
-    return templates.TemplateResponse("home.html", {
-        "request": request,
-        "admin": is_admin(request),
-    })
-
-
-@app.get("/about", response_class=HTMLResponse)
-async def about(request: Request):
-    """About page: explains RSA, SHA-256, and the verification workflow."""
-    try:
-        pub_key_pem = get_public_key_pem()
-    except FileNotFoundError:
-        pub_key_pem = "(Public key not yet generated — run generate_samples.py)"
-
-    return templates.TemplateResponse("about.html", {
-        "request": request,
-        "admin": is_admin(request),
-        "public_key_pem": pub_key_pem,
-    })
-
-
-@app.get("/verify", response_class=HTMLResponse)
-async def verify_page(request: Request):
-    """GET: Show the certificate verification / upload form."""
-    return templates.TemplateResponse("verify.html", {
-        "request": request,
-        "admin": is_admin(request),
-        "result": None,
-    })
-
-
-@app.post("/verify", response_class=HTMLResponse)
-async def verify_post(
-    request: Request,
-    json_file: UploadFile = File(None),
-    cert_id: str = Form(""),
-    student_name: str = Form(""),
-    course: str = Form(""),
-    institution: str = Form(""),
-    issue_date: str = Form(""),
-):
+async def root(request: Request):
     """
-    POST: Process certificate verification.
-
-    Supports two input methods:
-    1. Upload a JSON package file (the companion .json from generate_samples.py)
-    2. Manually enter certificate fields in a form
-
-    If a JSON file is uploaded, its 'certificate' field is extracted and verified.
-    If only form fields are provided, those are verified directly.
-
-    IMPORTANT: We verify the actual certificate fields — not just a file name or ID.
+    First Page: When a user opens http://127.0.0.1:8000/
+    If authenticated -> redirect immediately to /verify
+    Else -> show the simple, professional login page
     """
-    error_msg = None
-    result: VerificationResult | None = None
-    submitted_fields = {}
-
-    try:
-        if json_file and json_file.filename and json_file.filename.endswith(".json"):
-            # ── JSON Package Upload ────────────────────────────────────────────
-            content = await json_file.read()
-            if len(content) > 1_000_000:  # 1 MB limit
-                raise ValueError("Uploaded file is too large (max 1 MB).")
-
-            try:
-                package = json.loads(content.decode("utf-8"))
-            except json.JSONDecodeError as e:
-                raise ValueError(f"Invalid JSON file: {e}")
-
-            # Extract the 'certificate' block — this is the authoritative data
-            if "certificate" not in package:
-                raise ValueError("JSON file missing 'certificate' block.")
-
-            cert_block = package["certificate"]
-
-            # Validate that all required fields are present
-            required_fields = ["cert_id", "student_name", "course", "institution", "issue_date"]
-            for field in required_fields:
-                if field not in cert_block:
-                    raise ValueError(f"Missing field in certificate block: '{field}'")
-
-            submitted_fields = cert_block
-
-        elif cert_id.strip():
-            # ── Manual Form Entry ──────────────────────────────────────────────
-            submitted_fields = {
-                "cert_id":      cert_id.strip(),
-                "student_name": student_name.strip(),
-                "course":       course.strip(),
-                "institution":  institution.strip(),
-                "issue_date":   issue_date.strip(),
-            }
-        else:
-            error_msg = "Please upload a JSON certificate package or enter certificate details manually."
-
-        if submitted_fields and not error_msg:
-            # Run the actual cryptographic verification
-            result = verify_certificate(submitted_fields, db_path=DB_PATH)
-
-    except ValueError as e:
-        error_msg = str(e)
-    except Exception as e:
-        # Never expose internal errors to users
-        print(f"[app] Verification error: {e}")
-        error_msg = "An error occurred during verification. Please check the uploaded file."
-
-    return templates.TemplateResponse("verify.html", {
-        "request": request,
-        "admin": is_admin(request),
-        "result": result,
-        "error_msg": error_msg,
-        "submitted": submitted_fields,
+    if is_authenticated(request):
+        return RedirectResponse(url="/verify", status_code=302)
+    return templates.TemplateResponse(request, "login.html", {
+        "error": None,
     })
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ADMIN: LOGIN / LOGOUT
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    if is_admin(request):
-        return RedirectResponse(url="/certificates", status_code=302)
-    return templates.TemplateResponse("login.html", {
-        "request": request,
-        "admin": False,
+    """Login route: redirect to verify if already authenticated."""
+    if is_authenticated(request):
+        return RedirectResponse(url="/verify", status_code=302)
+    return templates.TemplateResponse(request, "login.html", {
         "error": None,
     })
 
@@ -253,39 +107,153 @@ async def login_post(
     username: str = Form(...),
     password: str = Form(...),
 ):
-    """Verify admin credentials and set session flag."""
-    if verify_admin_password(username, password, db_path=DB_PATH):
+    """
+    Verify credentials against the SQLite database.
+    On success: redirect immediately to the certificate verification page (/verify).
+    """
+    if verify_admin_password(username.strip(), password, db_path=DB_PATH):
         request.session["is_admin"] = True
-        request.session["username"] = username
-        return RedirectResponse(url="/certificates", status_code=302)
+        request.session["username"] = username.strip()
+        return RedirectResponse(url="/verify", status_code=302)
     else:
-        return templates.TemplateResponse("login.html", {
-            "request": request,
-            "admin": False,
+        return templates.TemplateResponse(request, "login.html", {
             "error": "Invalid username or password.",
         })
 
 
+@app.post("/", response_class=HTMLResponse)
+async def root_post(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+):
+    """Allow direct submission from the root route as well."""
+    return await login_post(request, username, password)
+
+
 @app.get("/logout")
 async def logout(request: Request):
-    """Clear the admin session."""
+    """Clear the session and redirect back to the login page."""
     request.session.clear()
     return RedirectResponse(url="/", status_code=302)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ADMIN: CERTIFICATE MANAGEMENT
+# 2. AFTER LOGIN — DIRECT CERTIFICATE UPLOAD PAGE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/verify", response_class=HTMLResponse)
+async def verify_page(request: Request):
+    """
+    Certificate verification page: requires authentication.
+    If not logged in, redirect to login page.
+    """
+    if not is_authenticated(request):
+        return RedirectResponse(url="/login", status_code=302)
+
+    return templates.TemplateResponse(request, "verify.html", {
+        "admin": is_authenticated(request),
+        "result": None,
+        "error_msg": None,
+    })
+
+
+@app.post("/verify", response_class=HTMLResponse)
+async def verify_post(
+    request: Request,
+    certificate_file: UploadFile = File(None),
+    json_file: UploadFile = File(None),
+):
+    """
+    Process certificate verification. Requires authentication.
+
+    Supports:
+    - Signed JSON certificate package (.json) with genuine RSA-2048 / SHA-256 verification.
+    - PDF uploads (.pdf): distinguishes visual documents from genuine digital signatures.
+      Ordinary PDFs without embedded digital signatures are accurately flagged.
+    """
+    if not is_authenticated(request):
+        return RedirectResponse(url="/login", status_code=302)
+
+    upload = certificate_file if (certificate_file and certificate_file.filename) else json_file
+    error_msg = None
+    result: VerificationResult | None = None
+
+    try:
+        if not upload or not upload.filename:
+            raise ValueError("Please select a certificate file (.json or .pdf) to verify.")
+
+        filename = upload.filename.lower()
+
+        if filename.endswith(".json"):
+            # ── 1. Signed JSON Package Verification ───────────────────────────
+            content = await upload.read()
+            if len(content) > 1_000_000:  # 1 MB limit
+                raise ValueError("Uploaded file is too large (maximum allowed size is 1 MB).")
+
+            try:
+                package = json.loads(content.decode("utf-8"))
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                raise ValueError(f"Invalid JSON file format: {e}")
+
+            # Extract the authoritative certificate block
+            if isinstance(package, dict) and "certificate" in package:
+                cert_block = package["certificate"]
+            elif isinstance(package, dict) and "cert_id" in package:
+                cert_block = package
+            else:
+                raise ValueError("JSON file missing required 'certificate' block.")
+
+            required_fields = ["cert_id", "student_name", "course", "institution", "issue_date"]
+            for field in required_fields:
+                if field not in cert_block:
+                    raise ValueError(f"Missing required field in certificate package: '{field}'")
+
+            # Execute real cryptographic verification against SQLite trusted registry
+            result = verify_certificate(cert_block, db_path=DB_PATH)
+
+        elif filename.endswith(".pdf"):
+            # ── 2. PDF Document Upload Analysis ──────────────────────────────
+            content = await upload.read()
+            if len(content) > 10_000_000:  # 10 MB limit
+                raise ValueError("Uploaded PDF file is too large (maximum allowed size is 10 MB).")
+
+            # Accurately distinguish unsigned visual PDFs from genuine digital signatures
+            # We do NOT pretend that an ordinary unsigned PDF has a verified digital signature.
+            error_msg = (
+                "The uploaded PDF is a visual document without an embedded cryptographic digital signature. "
+                "In accordance with digital security standards, please upload the authoritative "
+                "signed JSON certificate package (.json) to verify the RSA-2048 digital signature and cryptographic data integrity."
+            )
+
+        else:
+            raise ValueError("Unsupported file format. Please upload a signed certificate package (.json) or certificate document (.pdf).")
+
+    except ValueError as e:
+        error_msg = str(e)
+    except Exception as e:
+        print(f"[app] Verification processing error: {e}")
+        error_msg = "An unexpected error occurred during verification. Please check the uploaded file."
+
+    return templates.TemplateResponse(request, "verify.html", {
+        "admin": is_authenticated(request),
+        "result": result,
+        "error_msg": error_msg,
+    })
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ADMIN: CERTIFICATE REGISTRY & ISSUANCE
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.get("/certificates", response_class=HTMLResponse)
 async def list_certificates(request: Request):
-    """Show all trusted certificates in the database (admin only)."""
-    if not is_admin(request):
+    """Show all trusted certificates in the database (authenticated only)."""
+    if not is_authenticated(request):
         return RedirectResponse(url="/login", status_code=302)
 
     certs = get_all_certificates(db_path=DB_PATH)
-    return templates.TemplateResponse("certificates.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "certificates.html", {
         "admin": True,
         "certificates": certs,
     })
@@ -293,11 +261,11 @@ async def list_certificates(request: Request):
 
 @app.get("/issue", response_class=HTMLResponse)
 async def issue_page(request: Request):
-    """Show the issue-certificate form (admin only)."""
-    if not is_admin(request):
+    """Show the issue-certificate form (authenticated only)."""
+    if not is_authenticated(request):
         return RedirectResponse(url="/login", status_code=302)
-    return templates.TemplateResponse("issue.html", {
-        "request": request,
+
+    return templates.TemplateResponse(request, "issue.html", {
         "admin": True,
         "result": None,
         "error": None,
@@ -314,13 +282,12 @@ async def issue_post(
     issue_date: str = Form(...),
 ):
     """Issue a new certificate: sign it and store in the trusted database."""
-    if not is_admin(request):
+    if not is_authenticated(request):
         return RedirectResponse(url="/login", status_code=302)
 
     error = None
     result_data = None
 
-    # Basic validation
     if not all([cert_id.strip(), student_name.strip(), course.strip(),
                 institution.strip(), issue_date.strip()]):
         error = "All fields are required."
@@ -334,14 +301,38 @@ async def issue_post(
                 issue_date   = issue_date.strip(),
             )
             result_data = issue_certificate(cert, db_path=DB_PATH)
+
+            # Generate PDF and JSON package immediately for easy demo download
+            pdf_path = samples_dir / f"{cert.cert_id}.pdf"
+            generate_certificate_pdf(
+                cert_id           = cert.cert_id,
+                student_name      = cert.student_name,
+                course            = cert.course,
+                institution       = cert.institution,
+                issue_date        = cert.issue_date,
+                output_path       = pdf_path,
+                label             = "VALID",
+                sha256_hash       = result_data["sha256_hash"],
+                canonical_json_ref= f"{cert.cert_id}.json",
+            )
+            json_path = samples_dir / f"{cert.cert_id}.json"
+            json_package = {
+                "certificate": cert.to_dict(),
+                "sha256_hash": result_data["sha256_hash"],
+                "signature":   result_data["signature_b64"],
+                "issuer_id":   result_data["issuer_id"],
+                "canonical_json": result_data["canonical_json"],
+            }
+            json_path.write_text(json.dumps(json_package, indent=2), encoding="utf-8")
+            result_data["pdf_url"] = f"/download/pdf/{cert.cert_id}"
+            result_data["json_url"] = f"/download/json/{cert.cert_id}"
         except FileNotFoundError as e:
             error = str(e)
         except Exception as e:
             print(f"[app] Issue error: {e}")
             error = "Failed to issue certificate. Check server logs."
 
-    return templates.TemplateResponse("issue.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "issue.html", {
         "admin": True,
         "result": result_data,
         "error": error,
@@ -352,11 +343,11 @@ async def issue_post(
 async def revoke_cert(
     cert_id: str,
     request: Request,
-    reason: str = Form("Revoked by administrator"),
+    reason: str = Form("Revoked by administrator via registry interface"),
 ):
-    """Revoke a certificate (admin only)."""
-    if not is_admin(request):
-        raise HTTPException(status_code=403, detail="Admin access required.")
+    """Revoke a certificate (authenticated only)."""
+    if not is_authenticated(request):
+        raise HTTPException(status_code=403, detail="Admin authentication required.")
 
     success = revoke_certificate(cert_id, reason, db_path=DB_PATH)
     if not success:
@@ -364,22 +355,100 @@ async def revoke_cert(
     return RedirectResponse(url="/certificates", status_code=302)
 
 
-# ─── Sample File Downloads ────────────────────────────────────────────────────
+# ─── Certificate File Download Endpoints (PDF & JSON) ─────────────────────────
+
+@app.get("/download/pdf/{cert_id}")
+async def download_certificate_pdf(cert_id: str, request: Request):
+    """Serve or generate on-the-fly the visual PDF certificate for any registered ID."""
+    if not is_authenticated(request):
+        return RedirectResponse(url="/login", status_code=302)
+
+    from database import get_certificate_by_id
+    cert = get_certificate_by_id(cert_id, db_path=DB_PATH)
+    if not cert:
+        raise HTTPException(status_code=404, detail=f"Certificate '{cert_id}' not found.")
+
+    pdf_path = samples_dir / f"{cert_id}.pdf"
+    # Also check if named valid_{cert_id}.pdf
+    if not pdf_path.exists():
+        prefixed_pdf = samples_dir / f"valid_{cert_id}.pdf"
+        if prefixed_pdf.exists():
+            pdf_path = prefixed_pdf
+        else:
+            generate_certificate_pdf(
+                cert_id           = cert["cert_id"],
+                student_name      = cert["student_name"],
+                course            = cert["course"],
+                institution       = cert["institution"],
+                issue_date        = cert["issue_date"],
+                output_path       = pdf_path,
+                label             = "REVOKED" if cert["revoked"] else "VALID",
+                sha256_hash       = cert["sha256_hash"],
+                canonical_json_ref= f"{cert_id}.json",
+            )
+
+    return FileResponse(
+        str(pdf_path),
+        media_type="application/pdf",
+        filename=f"{cert_id}.pdf",
+    )
+
+
+@app.get("/download/json/{cert_id}")
+async def download_certificate_json(cert_id: str, request: Request):
+    """Serve or construct the authoritative signed JSON package for verification upload."""
+    if not is_authenticated(request):
+        return RedirectResponse(url="/login", status_code=302)
+
+    from database import get_certificate_by_id
+    cert = get_certificate_by_id(cert_id, db_path=DB_PATH)
+    if not cert:
+        raise HTTPException(status_code=404, detail=f"Certificate '{cert_id}' not found.")
+
+    json_path = samples_dir / f"{cert_id}.json"
+    if not json_path.exists():
+        prefixed_json = samples_dir / f"valid_{cert_id}.json"
+        if prefixed_json.exists():
+            json_path = prefixed_json
+        else:
+            sig_b64 = base64.b64encode(cert["signature"]).decode("utf-8")
+            pkg = {
+                "certificate": {
+                    "cert_id":      cert["cert_id"],
+                    "student_name": cert["student_name"],
+                    "course":       cert["course"],
+                    "institution":  cert["institution"],
+                    "issue_date":   cert["issue_date"],
+                },
+                "sha256_hash":    cert["sha256_hash"],
+                "signature":      sig_b64,
+                "issuer_id":      cert["issuer_id"],
+                "canonical_json": cert["canonical_json"],
+            }
+            json_path.write_text(json.dumps(pkg, indent=2), encoding="utf-8")
+
+    return FileResponse(
+        str(json_path),
+        media_type="application/json",
+        filename=f"{cert_id}.json",
+    )
+
+
+# ─── Fallback / Utility Routes ────────────────────────────────────────────────
 
 @app.get("/download/samples")
 async def download_samples_info(request: Request):
-    """Redirect to the samples directory listing."""
-    return RedirectResponse(url="/", status_code=302)
+    """Redirect to verify page."""
+    return RedirectResponse(url="/verify", status_code=302)
 
 
-# ─── Run the server ───────────────────────────────────────────────────────────
+# ─── Server Entrypoint ────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     uvicorn.run(
         "app:app",
         host="127.0.0.1",
         port=8000,
-        reload=True,      # Auto-reloads when code changes (development mode)
+        reload=True,
         log_level="info",
     )
-

@@ -1,40 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-generate_samples.py -- Generate Three Sample Certificates for Demo
-
-HOW TO RUN:
-    python generate_samples.py
-
-This script is SAFE to run more than once:
-  - It will NOT delete existing database records.
-  - It will NOT regenerate RSA keys if they already exist.
-  - It WILL overwrite PDF files but not DB records.
-
-WHAT IT CREATES:
-  sample_certificates/
-    valid_CERT-2026-001.json      <- signed certificate data (upload to verify)
-    valid_CERT-2026-001.pdf       <- visual certificate PDF
-    tampered_CERT-2026-001.json   <- original sig + modified data (should FAIL)
-    tampered_CERT-2026-001.pdf    <- PDF showing the tampered name
-    unknown_CERT-2026-999.json    <- unsigned, not in DB (should be NOT FOUND)
-    unknown_CERT-2026-999.pdf     <- PDF for the unknown certificate
-
-  instance/
-    private_key.pem               <- RSA-2048 private key (NEVER share this)
-    public_key.pem                <- RSA-2048 public key (safe to share)
-    certificates.db               <- SQLite trusted certificate store
+generate_samples.py -- Generate Sample Certificates for CertVerify System
 """
 
 import json
 import base64
 import sys
 from pathlib import Path
+import io
 
 # Ensure UTF-8 output on Windows
-import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-# Add the project directory to path so we can import our modules
+# Add project directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from crypto_utils import (
@@ -45,7 +23,7 @@ from crypto_utils import (
     KEY_ISSUER_ID,
 )
 from certificate_service import CertificateData, issue_certificate
-from database import init_db, DB_PATH
+from database import init_db, revoke_certificate, get_connection, DB_PATH
 from pdf_generator import generate_certificate_pdf
 
 # Output folder
@@ -69,8 +47,8 @@ def sep():
 # ==============================================================================
 
 print("=" * 60)
-print("  Digital Certificate Verification System")
-print("  Sample Generator -- VTU INS BIS 703")
+print("  CertVerify — Digital Certificate Verification System")
+print("  Vemana Institute of Technology — Sample Generator")
 print("=" * 60)
 print()
 
@@ -81,10 +59,16 @@ print()
 print("[Step 2] Initialising database...")
 init_db(DB_PATH)
 
+# Clear old demo sample records so they get cleanly re-issued with Vemana IT
+conn = get_connection(DB_PATH)
+with conn:
+    conn.execute("DELETE FROM certificates WHERE cert_id IN ('CERT-2026-001', 'CERT-2026-002')")
+conn.close()
+
 print()
 
 # ==============================================================================
-# SAMPLE A -- Valid Certificate
+# SAMPLE A -- Valid Certificate (Vemana Institute of Technology)
 # ==============================================================================
 
 sep()
@@ -93,27 +77,24 @@ print("[Sample A] Generating VALID certificate...")
 valid_cert = CertificateData(
     cert_id      = "CERT-2026-001",
     student_name = "Ananya Sharma",
-    course       = "B.E. Information Science and Engineering",
-    institution  = "Demo Engineering College",
+    course       = "Bachelor of Engineering in Information Science and Engineering",
+    institution  = "Vemana Institute of Technology",
     issue_date   = "01 October 2026",
 )
 
-# Issue: signs data and stores in DB
-result = issue_certificate(valid_cert, db_path=DB_PATH)
+result_valid = issue_certificate(valid_cert, db_path=DB_PATH)
 
-# Build the JSON package (this is what users upload to verify)
 valid_package = {
     "certificate": valid_cert.to_dict(),
-    "sha256_hash": result["sha256_hash"],
-    "signature":   result["signature_b64"],
-    "issuer_id":   result["issuer_id"],
-    "canonical_json": result["canonical_json"],
+    "sha256_hash": result_valid["sha256_hash"],
+    "signature":   result_valid["signature_b64"],
+    "issuer_id":   result_valid["issuer_id"],
+    "canonical_json": result_valid["canonical_json"],
 }
 
 valid_json_name = "valid_CERT-2026-001.json"
 valid_json_path = save_json_package(valid_json_name, valid_package)
 
-# Generate PDF
 valid_pdf_path = SAMPLES_DIR / "valid_CERT-2026-001.pdf"
 generate_certificate_pdf(
     cert_id           = valid_cert.cert_id,
@@ -123,7 +104,7 @@ generate_certificate_pdf(
     issue_date        = valid_cert.issue_date,
     output_path       = valid_pdf_path,
     label             = "VALID",
-    sha256_hash       = result["sha256_hash"],
+    sha256_hash       = result_valid["sha256_hash"],
     canonical_json_ref= valid_json_name,
 )
 
@@ -133,8 +114,7 @@ print("  [OK] PDF:  " + str(valid_pdf_path.resolve()))
 
 # ==============================================================================
 # SAMPLE B -- Tampered Certificate
-# IMPORTANT: We use the ORIGINAL signature but CHANGE the data.
-#            Verification will FAIL because the signature covers the original data.
+# Original signature preserved, but recipient name modified.
 # ==============================================================================
 
 print()
@@ -143,29 +123,22 @@ print("[Sample B] Generating TAMPERED certificate...")
 
 tampered_data = {
     "cert_id":      "CERT-2026-001",
-    "student_name": "Fake Student",     # <-- CHANGED (tampered!)
-    "course":       "B.E. Information Science and Engineering",
-    "institution":  "Demo Engineering College",
+    "student_name": "Fake Student",     # Forged name
+    "course":       "Bachelor of Engineering in Information Science and Engineering",
+    "institution":  "Vemana Institute of Technology",
     "issue_date":   "01 October 2026",
 }
 
-# Keep the ORIGINAL signature -- do NOT re-sign the tampered data
-original_signature_b64 = result["signature_b64"]
-
-tampered_canonical = make_canonical_json(tampered_data)
-tampered_hash      = compute_sha256(tampered_canonical)
+original_signature_b64 = result_valid["signature_b64"]
+tampered_canonical     = make_canonical_json(tampered_data)
+tampered_hash          = compute_sha256(tampered_canonical)
 
 tampered_package = {
-    "certificate":  tampered_data,
-    "sha256_hash":  tampered_hash,
-    "signature":    original_signature_b64,
-    "issuer_id":    KEY_ISSUER_ID,
+    "certificate":    tampered_data,
+    "sha256_hash":    tampered_hash,
+    "signature":      original_signature_b64,
+    "issuer_id":      KEY_ISSUER_ID,
     "canonical_json": tampered_canonical,
-    "_demo_note": (
-        "TAMPERED: student_name changed to 'Fake Student'. "
-        "The original RSA signature is preserved. "
-        "Verification will fail because the signature was made for the original data."
-    ),
 }
 
 tampered_json_name = "tampered_CERT-2026-001.json"
@@ -184,10 +157,8 @@ generate_certificate_pdf(
     canonical_json_ref= tampered_json_name,
 )
 
-print("  [WARN] JSON: " + str(tampered_json_path.resolve()))
-print("  [WARN] PDF:  " + str(tampered_pdf_path.resolve()))
-print("  [INFO] Note: Original signature preserved, but data was changed.")
-print("  [INFO] When verified, signature check will FAIL -> status = INVALID/TAMPERED")
+print("  [TAMPERED] JSON: " + str(tampered_json_path.resolve()))
+print("  [TAMPERED] PDF:  " + str(tampered_pdf_path.resolve()))
 
 
 # ==============================================================================
@@ -201,8 +172,8 @@ print("[Sample C] Generating UNKNOWN certificate...")
 unknown_data = {
     "cert_id":      "CERT-2026-999",
     "student_name": "Rahul Kumar",
-    "course":       "B.E. Computer Science and Engineering",
-    "institution":  "Unknown Private Institute",
+    "course":       "Bachelor of Engineering in Computer Science and Engineering",
+    "institution":  "Vemana Institute of Technology",
     "issue_date":   "15 March 2026",
 }
 
@@ -210,15 +181,11 @@ unknown_canonical = make_canonical_json(unknown_data)
 unknown_hash      = compute_sha256(unknown_canonical)
 
 unknown_package = {
-    "certificate":  unknown_data,
-    "sha256_hash":  unknown_hash,
-    "signature":    "UNSIGNED_NOT_FROM_TRUSTED_ISSUER",
-    "issuer_id":    "UNKNOWN_ISSUER",
+    "certificate":    unknown_data,
+    "sha256_hash":    unknown_hash,
+    "signature":      "UNSIGNED_NOT_IN_TRUSTED_DATABASE",
+    "issuer_id":      "UNKNOWN_ISSUER",
     "canonical_json": unknown_canonical,
-    "_demo_note": (
-        "UNKNOWN: This certificate ID is not registered in the trusted database. "
-        "Verification result will be NOT_FOUND."
-    ),
 }
 
 unknown_json_name = "unknown_CERT-2026-999.json"
@@ -237,10 +204,57 @@ generate_certificate_pdf(
     canonical_json_ref= unknown_json_name,
 )
 
-print("  [FAIL] JSON: " + str(unknown_json_path.resolve()))
-print("  [FAIL] PDF:  " + str(unknown_pdf_path.resolve()))
-print("  [INFO] Note: cert_id 'CERT-2026-999' is NOT in the trusted database.")
-print("  [INFO] When verified, result = NOT_FOUND (not TAMPERED -- important distinction!)")
+print("  [UNKNOWN] JSON: " + str(unknown_json_path.resolve()))
+print("  [UNKNOWN] PDF:  " + str(unknown_pdf_path.resolve()))
+
+
+# ==============================================================================
+# SAMPLE D -- Revoked Certificate (Registered in DB, marked revoked)
+# ==============================================================================
+
+print()
+sep()
+print("[Sample D] Generating REVOKED certificate...")
+
+revoked_cert = CertificateData(
+    cert_id      = "CERT-2026-002",
+    student_name = "David Miller",
+    course       = "Bachelor of Engineering in Information Science and Engineering",
+    institution  = "Vemana Institute of Technology",
+    issue_date   = "15 January 2026",
+)
+
+result_revoked = issue_certificate(revoked_cert, db_path=DB_PATH)
+
+# Mark revoked in database
+revoke_certificate("CERT-2026-002", "Credential revoked by authority due to administrative review", db_path=DB_PATH)
+
+revoked_package = {
+    "certificate":    revoked_cert.to_dict(),
+    "sha256_hash":    result_revoked["sha256_hash"],
+    "signature":      result_revoked["signature_b64"],
+    "issuer_id":      result_revoked["issuer_id"],
+    "canonical_json": result_revoked["canonical_json"],
+}
+
+revoked_json_name = "revoked_CERT-2026-002.json"
+revoked_json_path = save_json_package(revoked_json_name, revoked_package)
+
+revoked_pdf_path = SAMPLES_DIR / "revoked_CERT-2026-002.pdf"
+generate_certificate_pdf(
+    cert_id           = revoked_cert.cert_id,
+    student_name      = revoked_cert.student_name,
+    course            = revoked_cert.course,
+    institution       = revoked_cert.institution,
+    issue_date        = revoked_cert.issue_date,
+    output_path       = revoked_pdf_path,
+    label             = "REVOKED",
+    sha256_hash       = result_revoked["sha256_hash"],
+    canonical_json_ref= revoked_json_name,
+)
+
+print("  [REVOKED] JSON: " + str(revoked_json_path.resolve()))
+print("  [REVOKED] PDF:  " + str(revoked_pdf_path.resolve()))
 
 
 # ==============================================================================
@@ -253,26 +267,8 @@ print("  SAMPLE GENERATION COMPLETE")
 print("=" * 60)
 print()
 print("Files created in: " + str(SAMPLES_DIR.resolve()))
+print("  [VALID]     valid_CERT-2026-001.json  &  valid_CERT-2026-001.pdf")
+print("  [TAMPERED]  tampered_CERT-2026-001.json  &  tampered_CERT-2026-001.pdf")
+print("  [UNKNOWN]   unknown_CERT-2026-999.json  &  unknown_CERT-2026-999.pdf")
+print("  [REVOKED]   revoked_CERT-2026-002.json  &  revoked_CERT-2026-002.pdf")
 print()
-print("  sample_certificates/")
-print("  [OK]   " + valid_json_name)
-print("  [OK]   valid_CERT-2026-001.pdf")
-print("  [WARN] " + tampered_json_name)
-print("  [WARN] tampered_CERT-2026-001.pdf")
-print("  [FAIL] " + unknown_json_name)
-print("  [FAIL] unknown_CERT-2026-999.pdf")
-print()
-print("  instance/")
-print("  [KEY]  private_key.pem  (KEEP SECRET -- never commit to git)")
-print("  [PUB]  public_key.pem   (safe to share)")
-print("  [DB]   certificates.db  (trusted certificate store)")
-print()
-print("NEXT STEPS:")
-print("  1. Start the server:  python app.py")
-print("  2. Open browser:      http://127.0.0.1:8000")
-print("  3. Go to /verify and upload one of the JSON files above.")
-print()
-print("EXPECTED RESULTS:")
-print("  valid_CERT-2026-001.json    -> VALID")
-print("  tampered_CERT-2026-001.json -> INVALID / TAMPERED")
-print("  unknown_CERT-2026-999.json  -> NOT FOUND")

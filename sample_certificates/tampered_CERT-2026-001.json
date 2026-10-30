@@ -2,13 +2,12 @@
   "certificate": {
     "cert_id": "CERT-2026-001",
     "student_name": "Fake Student",
-    "course": "B.E. Information Science and Engineering",
-    "institution": "Demo Engineering College",
+    "course": "Bachelor of Engineering in Information Science and Engineering",
+    "institution": "Vemana Institute of Technology",
     "issue_date": "01 October 2026"
   },
-  "sha256_hash": "b59b32bc2056d4daccc24dfa8cb763b808cdb2b0a14fd96fc019bbd357c0516c",
-  "signature": "nt0btdXgDtKKHDrD9AdpJCNgw5TdTsY9LbAzLjA2TLfaHIIzH8xwyRx1aypQwHKMmT8/4tyPGnEgvvo8QOPx1L4cohplgGILTtc2lEbiRekt0TJ2wS98ILIyH3D6Zf5vL0Bqz/gXeayjJ45Fosp/LSDJlF6PbJNBpD9wGk3CyPv5AkCblbwMUNrwq32PguANumPB1WRZUCJZn1HG4LwtQv/V5iS/YmtjqbYph+pYdN5Omz5OCnozHZx29E/m3ZNPRfWU/tKSwMnZCnnUInz7kFOJUAi8uxGjlwEMD3AJt9eRFniQEjeWXYdyonCwOj8b19Pxye7aEPrhMJbpB78PTg==",
-  "issuer_id": "DemoEngineeringCollege-CA-2026",
-  "canonical_json": "{\"cert_id\":\"CERT-2026-001\",\"course\":\"B.E. Information Science and Engineering\",\"institution\":\"Demo Engineering College\",\"issue_date\":\"01 October 2026\",\"student_name\":\"Fake Student\"}",
-  "_demo_note": "TAMPERED: student_name changed to 'Fake Student'. The original RSA signature is preserved. Verification will fail because the signature was made for the original data."
+  "sha256_hash": "b7ee0bf40477bbcd093fb2bf3941557c4873808057775933b6469a7e033a3979",
+  "signature": "mzwFBOeuVyBIbtKL5OCxUIWevoFW3yhW9IJV2fXkbNj7j+UfjNke9iN/pS5qU8eH9sq/QhpHboMxO5o5S15NUqTs9IJkXRWUdUI5niGjIB0jUkrx4MxvbrXMe1PLLWRhnA1/DI3IOqV09zZRtcYQ49o9iJunZpClcsgI99hdD/+EMWgB72CP/625Q1Tr8Rt+yemeQUbFBBX6mQVEBagFghYYpJlyH9SuI6SuSCAG4QybFux4WBv83Eunogivb2RBwOAgFIzUmMEn1XG99GHyluWQ+3ZEIqZsiqkEwbvFwS7fvtTCNc4Jpam4UGZZKvmq91ZBcnRTUt9Bp+fCEs2Gyg==",
+  "issuer_id": "VemanaIT-CA-2026",
+  "canonical_json": "{\"cert_id\":\"CERT-2026-001\",\"course\":\"Bachelor of Engineering in Information Science and Engineering\",\"institution\":\"Vemana Institute of Technology\",\"issue_date\":\"01 October 2026\",\"student_name\":\"Fake Student\"}"
 }
