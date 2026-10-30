@@ -1,0 +1,13 @@
+{
+  "certificate": {
+    "cert_id": "CERT-2026-002",
+    "student_name": "Kaviya",
+    "course": "ISE",
+    "institution": "Vemana Institute of Technology",
+    "issue_date": "30October2026"
+  },
+  "sha256_hash": "c54ac1d70c72c7fc6bd3eb5ccc7dc3445ec9f425ffff884a98f67349daffa036",
+  "signature": "evrzgLwajSXf005MIdE78vnfq0ovEAVI3aCLxiJpoORjcOUocYzseTPsTWrNdbzslyBw1VzgdvpILuYsfJTd38wYvkHXnxSCi80glWPx3Y2dG9J31I3rKEczP/xIb220C4BHpzfHa0rqiEIcfRk8yS8QvZxI3NR86d2cpelkp5qWI2xPOsDCeEjVx+kgqfCnUO4Ug7LK5v5MXWP17FU0JEp7AEr+eptbUI9joxspnNtrc56HNk3hrHQ367Wo8Ze5Ih7TjSNnLFWbaA9QKvve9bdwnuAq2XqQ0C4Xm+Zy77oogev2NapTuiXMpncdtNbAuB5csgKFlf5tqpB/3QaFnA==",
+  "issuer_id": "VemanaIT-CA-2026",
+  "canonical_json": "{\"cert_id\":\"CERT-2026-002\",\"course\":\"ISE\",\"institution\":\"Vemana Institute of Technology\",\"issue_date\":\"30October2026\",\"student_name\":\"Kaviya\"}"
+}

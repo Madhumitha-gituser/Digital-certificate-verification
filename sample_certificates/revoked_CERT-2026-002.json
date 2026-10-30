@@ -7,7 +7,7 @@
     "issue_date": "15 January 2026"
   },
   "sha256_hash": "bac1564b1606a689bb829e6808afae82592e480ed2057445bdea06100718ea76",
-  "signature": "EeB9t9bDUh6BMbx4aQvz+dXKL8BNmiiN4T32kl/Tdwnf83QLlknJutgx2i0M9VjA8qvoPuYFTL/Vb7xxwTN1hAESAv/DX/EpQUmEn8Bc7yl4emGqemYvMRD6Mh/lc7DUQqnLi6VQCk264XQQsX3+tRufBzJ7/i++BIQPFVxyuaRr/pkepvzNAYIA9f4uQS6XXXU+/PIDAwhtnID5WWRkgetjk4OGzDOLF2+gryG4LDHqRxI/a0OD9ChI57IpJXayAiK9MvY27hL6GA4BYtBv2YEecyKuQr1zOI0mo1yp51SChymPmROv1stsqYElRTLy2bOG+K/TpGyIJ8FKEziHiw==",
+  "signature": "fty/VTimQLatpHOgO0KYKA6WVqdmvpnYaJ8uo0PEOqYwtBbnjlyVbLQ+KB33pEi+c2vjJBqYWXxomnhJvQvbu3QS7O84RlwIgjYbU6iWc+D09+TGZjZ1DEJr+GvqCV9cfOegJPQBHO3+5mAEhfQvDQl1t+jwLrfSv2jnlcFZPxuTrtJpYgp/q+hqplZiS2W13QwO2VYAwpBVrtk/TY5+uOJOmVwZ4VtsPJdq1h/a7I3EqIFYYkD/vNuOAfNYGhWiu+1nwO7Q6BXVJg+uADx4SMA3WWdvofu13wVaZEV+x1+vLln1jGYJ2YLoL4fvJhH1NdRNxPd/wiMfFkWtIFMQzg==",
   "issuer_id": "VemanaIT-CA-2026",
   "canonical_json": "{\"cert_id\":\"CERT-2026-002\",\"course\":\"Bachelor of Engineering in Information Science and Engineering\",\"institution\":\"Vemana Institute of Technology\",\"issue_date\":\"15 January 2026\",\"student_name\":\"David Miller\"}"
 }
