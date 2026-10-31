@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from crypto_utils import initialize_keys, get_public_key_pem
-from database import init_db, get_all_certificates, revoke_certificate, update_certificate_status, verify_admin_password, DB_PATH
+from database import init_db, get_all_certificates, revoke_certificate, update_certificate_status, get_next_cert_id, verify_admin_password, DB_PATH
 from certificate_service import (
     CertificateData,
     issue_certificate,
@@ -275,10 +275,12 @@ async def issue_page(request: Request):
     if not is_authenticated(request):
         return RedirectResponse(url="/login", status_code=302)
 
+    next_id = get_next_cert_id(db_path=DB_PATH)
     return templates.TemplateResponse(request, "issue.html", {
         "admin": True,
         "result": None,
         "error": None,
+        "next_cert_id": next_id,
     })
 
 
@@ -298,6 +300,12 @@ async def issue_post(
 
     error = None
     result_data = None
+
+    if not cert_id.strip():
+        cert_id = get_next_cert_id(db_path=DB_PATH)
+
+    if not cert_id.strip():
+        cert_id = get_next_cert_id(db_path=DB_PATH)
 
     if not all([cert_id.strip(), student_name.strip(), course.strip(),
                 institution.strip(), issue_date.strip()]):

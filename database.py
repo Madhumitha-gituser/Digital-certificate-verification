@@ -204,3 +204,25 @@ def verify_admin_password(username: str, password: str, db_path: Path = DB_PATH)
         return row is not None
     finally:
         conn.close()
+
+
+def get_next_cert_id(db_path: Path = DB_PATH) -> str:
+    """
+    Calculate the next sequential Certificate ID for the current year.
+    Format: CERT-YYYY-NNN (e.g., CERT-2026-005).
+    """
+    year = datetime.now().year
+    prefix = f"CERT-{year}-"
+    conn = get_connection(db_path)
+    try:
+        rows = conn.execute("SELECT cert_id FROM certificates WHERE cert_id LIKE ?", (f"{prefix}%",)).fetchall()
+        max_num = 0
+        for r in rows:
+            cid = r["cert_id"]
+            suffix = cid.replace(prefix, "")
+            if suffix.isdigit():
+                max_num = max(max_num, int(suffix))
+        next_num = max_num + 1
+        return f"{prefix}{next_num:03d}"
+    finally:
+        conn.close()

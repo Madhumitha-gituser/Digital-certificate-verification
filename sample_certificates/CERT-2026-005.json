@@ -1,0 +1,14 @@
+{
+  "certificate": {
+    "cert_id": "CERT-2026-005",
+    "student_name": "Madhumitha M",
+    "course": "Bachelor of Engineering in Computer Science and Engineering",
+    "institution": "Vemana Institute of Technology",
+    "issue_date": "31 October 2026",
+    "usn": "1VI23IS058"
+  },
+  "sha256_hash": "1a7563572536314cc051b997b3e7c0c67da6bf42672440f9a7f9c583eb61b964",
+  "signature": "i89oBUtQrVKrupOHMsmIfdnHu6natD4Md8qwqW9XqsjvAxqZ168XeTlTUcSXBPqtjyUii8jO+0eZ728E0hHq7AESIX398xpwLoMigkHjQZxgWe7lGH+dHA4d/fMZOmw2aFyDCoq/S9rwdhJHlNRcQHgD/m/EC7k0/dA447hFQhItwDEcJ18WtLTUHOF04qbL8YFSOJfQ2kpx3UsGiB7WHVj7NMlhIAxXqV+7ll8UjW6n9qiooRaV3bvPPHA7Js0vzubhtcEL83L0aTv2xomOVWbE93WwgI6POQ6JOmqTVKLF/AP8tBpEB6msxLKNk8Rf3t/h9NU3mdk8bGpjTZAZIQ==",
+  "issuer_id": "VemanaIT-CA-2026",
+  "canonical_json": "{\"cert_id\":\"CERT-2026-005\",\"course\":\"Bachelor of Engineering in Computer Science and Engineering\",\"institution\":\"Vemana Institute of Technology\",\"issue_date\":\"31 October 2026\",\"student_name\":\"Madhumitha M\",\"usn\":\"1VI23IS058\"}"
+}

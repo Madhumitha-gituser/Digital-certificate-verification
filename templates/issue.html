@@ -114,8 +114,11 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Certificate ID *</label>
-                                <input type="text" name="cert_id" class="form-control"
-                                       placeholder="e.g. CERT-2026-003" required>
+                                <div class="input-group">
+                                    <input type="text" name="cert_id" class="form-control"
+                                           value="{{ next_cert_id }}" placeholder="e.g. CERT-2026-005" required>
+                                    <span class="input-group-text bg-light text-muted small"><i class="bi bi-magic me-1"></i>Auto</span>
+                                </div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">University Seat Number (USN) *</label>
