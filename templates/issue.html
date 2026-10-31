@@ -6,52 +6,107 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
 
-            <h2 class="fw-bold mb-1" style="color:#0b192c;">
-                <i class="bi bi-award me-2" style="color:#1565c0;"></i>Issue New Certificate
-            </h2>
-            <p class="text-muted mb-4">
-                Fill in the certificate details. The system signs the canonical data with the RSA private key, registers it in the database, and automatically generates both the visual PDF and the signed JSON package.
-            </p>
+            {% if result %}
+            <!-- ═════════════════════════════════════════════════════════════════ -->
+            <!-- SUCCESS VIEW: Certificate Issued (No scrolling required) -->
+            <!-- ═════════════════════════════════════════════════════════════════ -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <a href="/issue" class="btn btn-outline-secondary fw-semibold">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Issue Form
+                </a>
+                <a href="/certificates" class="btn btn-outline-dark btn-sm">
+                    <i class="bi bi-list-check me-1"></i>View All Certificates
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4" style="border-radius:14px; overflow:hidden; border-left:6px solid #16a34a !important; background:#f0fdf4;">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size:2.5rem; flex-shrink:0;"></i>
+                        <div>
+                            <h4 class="fw-bold text-dark mb-1">Certificate Issued Successfully!</h4>
+                            <div class="text-muted small">Digitally signed with RSA-2048 / SHA-256 and registered in Vemana IT trusted database.</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3 p-3 border mb-4 mt-3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="text-muted small">Certificate ID</div>
+                                <div class="fw-bold text-dark fs-5"><code>{{ result.cert_id }}</code></div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">University Seat Number (USN)</div>
+                                <div class="fw-bold text-primary"><span class="badge bg-primary-subtle text-primary border fs-6">{{ result.usn or '—' }}</span></div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">Student Name</div>
+                                <div class="fw-semibold text-dark">{{ result.student_name }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">Course / Degree</div>
+                                <div class="fw-semibold text-dark">{{ result.course }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">Institution</div>
+                                <div class="text-dark">{{ result.institution }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">Issue Date</div>
+                                <div class="text-dark">{{ result.issue_date }}</div>
+                            </div>
+                            <div class="col-12 border-top pt-2">
+                                <div class="text-muted small mb-1">SHA-256 Digest Fingerprint</div>
+                                <code class="small text-break">{{ result.sha256_hash }}</code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Instant Action Buttons right at the top -->
+                    <div class="d-flex flex-wrap gap-2 pt-2 border-top">
+                        <a href="{{ result.pdf_url }}" target="_blank" class="btn btn-primary fw-semibold px-3 py-2">
+                            <i class="bi bi-file-earmark-pdf me-2"></i>Download Certificate PDF
+                        </a>
+                        <a href="{{ result.json_url }}" class="btn btn-success fw-semibold px-3 py-2" download>
+                            <i class="bi bi-file-earmark-code me-2"></i>Download Signed JSON Package
+                        </a>
+                        <a href="/verify" class="btn btn-outline-primary fw-semibold px-3 py-2">
+                            <i class="bi bi-shield-check me-2"></i>Test in Verifier
+                        </a>
+                        <a href="/issue" class="btn btn-outline-dark fw-semibold px-3 py-2">
+                            <i class="bi bi-arrow-left me-2"></i>Issue Another Certificate
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <!-- ═════════════════════════════════════════════════════════════════ -->
+            <!-- ISSUE FORM VIEW (Shown when creating a certificate) -->
+            <!-- ═════════════════════════════════════════════════════════════════ -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="fw-bold mb-1" style="color:#0b192c;">
+                        <i class="bi bi-award me-2" style="color:#1565c0;"></i>Issue New Certificate
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Fill in details below. The system signs the certificate with the RSA private key.
+                    </p>
+                </div>
+                <a href="/certificates" class="btn btn-outline-secondary">
+                    <i class="bi bi-list me-1"></i>View Registry
+                </a>
+            </div>
 
             {% if error %}
-            <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ error }}</div>
-            {% endif %}
-
-            {% if result %}
-            <div class="alert alert-success border-0 shadow-sm p-4 mb-4" style="background:#f0fdf4; border-left:6px solid #16a34a !important; border-radius:12px;">
-                <h5 class="fw-bold text-dark mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Certificate Issued Successfully!</h5>
-                <table class="table table-sm table-borderless mb-3 mt-2">
-                    <tr><th style="width:160px" class="text-muted fw-normal">Certificate ID</th><td><strong>{{ result.cert_id }}</strong></td></tr>
-                    <tr><th class="text-muted fw-normal">SHA-256 Digest</th><td><code class="small">{{ result.sha256_hash }}</code></td></tr>
-                    <tr><th class="text-muted fw-normal">Issuer ID</th><td>{{ result.issuer_id }}</td></tr>
-                    <tr><th class="text-muted fw-normal">Signature (B64)</th>
-                        <td><code class="small" style="word-break:break-all;">{{ result.signature_b64[:64] }}…</code></td>
-                    </tr>
-                    {% if result.already_existed %}
-                    <tr><td colspan="2" class="text-warning">
-                        <i class="bi bi-info-circle me-1"></i>
-                        This certificate ID already existed in the database.
-                    </td></tr>
-                    {% endif %}
-                </table>
-
-                <!-- One-click Download Buttons for Demo -->
-                <div class="d-flex flex-wrap gap-2 pt-2 border-top">
-                    <a href="{{ result.pdf_url }}" target="_blank" class="btn btn-outline-primary fw-semibold">
-                        <i class="bi bi-file-earmark-pdf me-1"></i>Download Certificate PDF
-                    </a>
-                    <a href="{{ result.json_url }}" class="btn btn-success fw-semibold" download>
-                        <i class="bi bi-file-earmark-code me-1"></i>Download Signed JSON Package
-                    </a>
-                    <a href="/verify" class="btn btn-outline-secondary">
-                        <i class="bi bi-patch-check me-1"></i>Test in Verifier
-                    </a>
-                </div>
+            <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
+                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                <div>{{ error }}</div>
             </div>
             {% endif %}
 
-            <div class="card shadow-sm border-0" style="border-radius:14px;">
-                <div class="card-header" style="background:#0b192c; color:white; border-radius:14px 14px 0 0;">
+            <div class="card shadow-sm border-0 mb-4" style="border-radius:14px;">
+                <div class="card-header py-3" style="background:#0b192c; color:white; border-radius:14px 14px 0 0;">
                     <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Certificate Details</h5>
                 </div>
                 <div class="card-body p-4">
@@ -61,17 +116,21 @@
                                 <label class="form-label fw-bold">Certificate ID *</label>
                                 <input type="text" name="cert_id" class="form-control"
                                        placeholder="e.g. CERT-2026-003" required>
-                                <div class="form-text">Must be unique. Format: CERT-YYYY-NNN</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">University Seat Number (USN) *</label>
+                                <input type="text" name="usn" class="form-control"
+                                       placeholder="e.g. 1VI22IS045" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Student Name *</label>
                                 <input type="text" name="student_name" class="form-control"
-                                       placeholder="e.g. Priya Mehta" required>
+                                       placeholder="e.g. Ananya Sharma" required>
                             </div>
-                            <div class="col-12">
-                                <label class="form-label fw-bold">Course *</label>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Course / Degree *</label>
                                 <input type="text" name="course" class="form-control"
-                                       placeholder="e.g. Bachelor of Engineering in Computer Science" required>
+                                       value="Bachelor of Engineering in Information Science and Engineering" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Institution *</label>
@@ -80,32 +139,37 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Issue Date *</label>
-                                <input type="text" name="issue_date" class="form-control"
-                                       placeholder="e.g. 01 October 2026" required>
+                                <input type="date" name="issue_date" id="issue_date" class="form-control" required>
                             </div>
                         </div>
 
-                        <div class="mt-4">
+                        <div class="mt-4 pt-2 border-top d-flex gap-2 align-items-center">
                             <button type="submit" class="btn btn-primary btn-lg px-4" style="background:#0b192c; border:none;">
                                 <i class="bi bi-pen me-2"></i>Sign &amp; Issue Certificate
                             </button>
                             <a href="/certificates" class="btn btn-outline-secondary btn-lg ms-2">
-                                <i class="bi bi-list me-2"></i>View Registry
+                                <i class="bi bi-x-circle me-1"></i>Cancel
                             </a>
                         </div>
                     </form>
                 </div>
             </div>
-
-            <div class="card mt-3 border-0 shadow-sm" style="background:#f8fafc;">
-                <div class="card-body small text-muted">
-                    <i class="bi bi-info-circle me-1 text-primary"></i>
-                    <strong>Automated Cryptographic Workflow:</strong>
-                    When you click "Sign &amp; Issue Certificate", the system converts the data to canonical JSON, computes its SHA-256 digest, signs it with the RSA-2048 private key (PSS padding), saves it into the SQLite registry, and generates the visual PDF and companion JSON package.
-                </div>
-            </div>
+            {% endif %}
 
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Automatically set default date to today's date if empty
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.getElementById('issue_date');
+        if (dateInput && !dateInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+        }
+    });
+</script>
 {% endblock %}

@@ -190,6 +190,42 @@ def test_04_valid_certificate_end_to_end(generated_keys, test_db):
     assert ver_result.data_integrity is True
 
 
+def test_04b_certificate_with_usn(generated_keys, test_db):
+    """Issue a certificate with USN, then verify it → should return VALID with matching USN."""
+    cert = CertificateData(
+        cert_id      = "E2E-TEST-USN",
+        student_name = "Kavya R",
+        course       = "Bachelor of Engineering in Information Science and Engineering",
+        institution  = "Vemana Institute of Technology",
+        issue_date   = "15 June 2026",
+        usn          = "1VI22IS045",
+    )
+    issue_certificate(cert, db_path=test_db)
+    ver = verify_certificate(cert.to_dict(), db_path=test_db)
+    assert ver.status == "VALID"
+    assert ver.usn == "1VI22IS045"
+    assert ver.signature_valid is True
+    assert ver.data_integrity is True
+
+
+def test_04b_certificate_with_usn(generated_keys, test_db):
+    """Issue a certificate with USN, then verify it → should return VALID with matching USN."""
+    cert = CertificateData(
+        cert_id      = "E2E-TEST-USN",
+        student_name = "Kavya R",
+        course       = "Bachelor of Engineering in Information Science and Engineering",
+        institution  = "Vemana Institute of Technology",
+        issue_date   = "15 June 2026",
+        usn          = "1VI22IS045",
+    )
+    issue_certificate(cert, db_path=test_db)
+    ver = verify_certificate(cert.to_dict(), db_path=test_db)
+    assert ver.status == "VALID"
+    assert ver.usn == "1VI22IS045"
+    assert ver.signature_valid is True
+    assert ver.data_integrity is True
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # TEST 5: Tampered certificate rejection
 # ══════════════════════════════════════════════════════════════════════════════

@@ -57,16 +57,20 @@ class CertificateData:
     course: str
     institution: str
     issue_date: str
+    usn: str = ""
 
     def to_dict(self) -> dict:
         """Convert to a plain dictionary for JSON serialization."""
-        return {
+        data = {
             "cert_id": self.cert_id,
             "student_name": self.student_name,
             "course": self.course,
             "institution": self.institution,
             "issue_date": self.issue_date,
         }
+        if self.usn:
+            data["usn"] = self.usn
+        return data
 
 
 @dataclass
@@ -84,6 +88,7 @@ class VerificationResult:
     signature_valid: Optional[bool]     # None if we couldn't check
     data_integrity: Optional[bool]      # True = data matches trusted record
     explanation: str                    # Human-readable explanation
+    usn: str = ""
     revoke_reason: Optional[str] = None
 
 
@@ -115,6 +120,7 @@ def issue_certificate(cert_data: CertificateData, db_path: Path = DB_PATH) -> di
         sha256_hash=sha256,
         signature=signature_bytes,
         issuer_id=KEY_ISSUER_ID,
+        usn=cert_data.usn,
         db_path=db_path,
     )
 
@@ -148,6 +154,7 @@ def verify_certificate(submitted: dict, db_path: Path = DB_PATH) -> Verification
     course        = submitted.get("course", "").strip()
     institution   = submitted.get("institution", "").strip()
     issue_date    = submitted.get("issue_date", "").strip()
+    usn           = submitted.get("usn", "").strip()
 
     # Validate that required fields are present
     if not cert_id:
@@ -157,6 +164,7 @@ def verify_certificate(submitted: dict, db_path: Path = DB_PATH) -> Verification
             institution=institution, issue_date=issue_date,
             signature_valid=None, data_integrity=None,
             explanation="Certificate ID is missing or empty.",
+            usn=usn,
         )
 
     # ── Step 2: Look up the cert_id in the trusted database ──────────────────
@@ -174,7 +182,11 @@ def verify_certificate(submitted: dict, db_path: Path = DB_PATH) -> Verification
                 f"Certificate ID '{cert_id}' is not registered in the trusted database. "
                 "This certificate was not issued by our system."
             ),
+            usn=usn,
         )
+
+    db_keys = db_row.keys() if hasattr(db_row, "keys") else []
+    record_usn = db_row["usn"] if "usn" in db_keys and db_row["usn"] else (usn or "")
 
     # ── Step 3: Check revocation status ──────────────────────────────────────
     if db_row["revoked"] == 1:
@@ -185,6 +197,7 @@ def verify_certificate(submitted: dict, db_path: Path = DB_PATH) -> Verification
             issue_date=db_row["issue_date"],
             signature_valid=None, data_integrity=None,
             explanation=f"This certificate has been REVOKED. Reason: {db_row['revoke_reason'] or 'Not specified'}.",
+            usn=record_usn,
             revoke_reason=db_row["revoke_reason"],
         )
 
@@ -197,8 +210,11 @@ def verify_certificate(submitted: dict, db_path: Path = DB_PATH) -> Verification
         "institution": institution,
         "issue_date": issue_date,
     }
-    submitted_canonical = make_canonical_json(submitted_data)
     trusted_canonical   = db_row["canonical_json"]
+    if '"usn"' in trusted_canonical:
+        submitted_data["usn"] = usn
+
+    submitted_canonical = make_canonical_json(submitted_data)
 
     data_matches = (submitted_canonical == trusted_canonical)
 
@@ -231,6 +247,7 @@ def verify_certificate(submitted: dict, db_path: Path = DB_PATH) -> Verification
                 "The certificate data matches the trusted record exactly, "
                 "and the RSA-PSS digital signature is authentic."
             ),
+            usn=record_usn,
         )
     else:
         # Build a detailed explanation of what failed
@@ -250,6 +267,7 @@ def verify_certificate(submitted: dict, db_path: Path = DB_PATH) -> Verification
             explanation=(
                 "❌ Certificate is INVALID / TAMPERED. " + " ".join(reasons)
             ),
+            usn=record_usn,
         )
 
 

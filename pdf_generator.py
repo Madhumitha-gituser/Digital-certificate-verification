@@ -157,6 +157,7 @@ def generate_certificate_pdf(
     sha256_hash: str = "",
     canonical_json_ref: str = "",
     signature_b64: str = "",
+    usn: str = "",
 ) -> Path:
     """
     Generate an authentic, masterfully aligned landscape academic degree certificate,
@@ -174,6 +175,7 @@ def generate_certificate_pdf(
         "certificate": {
             "cert_id": cert_id,
             "student_name": student_name,
+            "usn": usn.strip() if usn else "",
             "course": course,
             "institution": institution,
             "issue_date": issue_date,
@@ -221,8 +223,8 @@ def generate_certificate_pdf(
 
     # 5. Top Header Section
     c.setFillColor(GOLD_RICH)
-    c.setFont("Helvetica-Bold", 8.0)
-    c.drawCentredString(cx, 536, "KRISHNA CHETHANA EDUCATION TRUST (R)")
+    c.setFont("Helvetica-Bold", 8.5)
+    c.drawCentredString(cx, 536, "KARNATAKA REDDY JANA SANGHA (KRJS)")
 
     inst_name = (institution or "Vemana Institute of Technology").strip()
     c.setFillColor(NAVY_HEADER)
@@ -286,7 +288,8 @@ def generate_certificate_pdf(
     # 10. Student Registration & Seat Number
     c.setFillColor(MUTED_SLATE)
     c.setFont("Helvetica-Bold", 9.0)
-    usn_text = f"USN: 1VI22IS{cert_id[-3:] if len(cert_id)>=3 else '001'}   |   Certificate ID: {cert_id}"
+    usn_display = usn.strip() if usn and usn.strip() else f"1VI22IS{cert_id[-3:] if len(cert_id)>=3 else '001'}"
+    usn_text = f"USN: {usn_display}   |   Certificate ID: {cert_id}"
     c.drawCentredString(cx, 325, usn_text)
 
     # 11. Conferment Text
@@ -326,7 +329,7 @@ def generate_certificate_pdf(
     
     c.setFillColor(NAVY_HEADER)
     c.setFont("Times-Bold", 10.5)
-    c.drawCentredString(left_cx, sig_line_y - 14, "Dr. H. N. Suresh, M.Tech., Ph.D.")
+    c.drawCentredString(left_cx, sig_line_y - 14, "Dr. Rajanna M")
     c.setFillColor(MUTED_SLATE)
     c.setFont("Times-Roman", 8.5)
     c.drawCentredString(left_cx, sig_line_y - 25, "Professor & Head of Department")
@@ -341,10 +344,10 @@ def generate_certificate_pdf(
     
     c.setFillColor(NAVY_HEADER)
     c.setFont("Times-Bold", 10.5)
-    c.drawCentredString(right_cx, sig_line_y - 14, "Dr. Vijayasimha Reddy, Ph.D.")
+    c.drawCentredString(right_cx, sig_line_y - 14, "Dr. Chandra Shekar S. M.")
     c.setFillColor(MUTED_SLATE)
     c.setFont("Times-Roman", 8.5)
-    c.drawCentredString(right_cx, sig_line_y - 25, "Principal & Director")
+    c.drawCentredString(right_cx, sig_line_y - 25, "Principal")
     c.drawCentredString(right_cx, sig_line_y - 35, "Vemana Institute of Technology")
 
     # 16. Security & Cryptographic Integrity Footer Bar

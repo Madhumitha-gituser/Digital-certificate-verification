@@ -81,19 +81,6 @@
             border-radius: 14px 14px 0 0 !important;
             border-bottom: 1px solid var(--card-border);
         }
-
-        /* Footer */
-        footer {
-            background: #0b192c;
-            color: #94a3b8;
-            padding: 1.75rem 0;
-            margin-top: auto;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 0.88rem;
-        }
-        footer strong {
-            color: #f1f5f9;
-        }
     </style>
 </head>
 <body>
@@ -129,21 +116,9 @@
 </nav>
 
 <!-- Main content -->
-<main>
+<main class="flex-grow-1">
 {% block content %}{% endblock %}
 </main>
-
-<!-- Footer -->
-<footer>
-    <div class="container text-center">
-        <div class="mb-1">
-            <strong>CertVerify</strong> &mdash; Secure Academic Certificate Verification System
-        </div>
-        <div class="text-secondary small">
-            &copy; 2026 CertVerify. All rights reserved.
-        </div>
-    </div>
-</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 {% block scripts %}{% endblock %}

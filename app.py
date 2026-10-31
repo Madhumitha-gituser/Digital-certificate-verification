@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from crypto_utils import initialize_keys, get_public_key_pem
-from database import init_db, get_all_certificates, revoke_certificate, verify_admin_password, DB_PATH
+from database import init_db, get_all_certificates, revoke_certificate, update_certificate_status, verify_admin_password, DB_PATH
 from certificate_service import (
     CertificateData,
     issue_certificate,
@@ -287,6 +287,7 @@ async def issue_post(
     request: Request,
     cert_id: str = Form(...),
     student_name: str = Form(...),
+    usn: str = Form(""),
     course: str = Form(...),
     institution: str = Form(...),
     issue_date: str = Form(...),
@@ -303,16 +304,30 @@ async def issue_post(
         error = "All fields are required."
     else:
         try:
+            # Parse calendar picker date (YYYY-MM-DD) into readable academic format
+            formatted_date = issue_date.strip()
+            try:
+                dt = datetime.strptime(formatted_date, "%Y-%m-%d")
+                formatted_date = dt.strftime("%d %B %Y")
+            except ValueError:
+                pass
+
             cert = CertificateData(
                 cert_id      = cert_id.strip(),
                 student_name = student_name.strip(),
                 course       = course.strip(),
                 institution  = institution.strip(),
-                issue_date   = issue_date.strip(),
+                issue_date   = formatted_date,
+                usn          = usn.strip(),
             )
             result_data = issue_certificate(cert, db_path=DB_PATH)
+            result_data["usn"] = cert.usn
+            result_data["student_name"] = cert.student_name
+            result_data["course"] = cert.course
+            result_data["institution"] = cert.institution
+            result_data["issue_date"] = cert.issue_date
 
-            # Generate PDF and JSON package immediately for easy demo download
+            # Generate PDF and JSON package immediately for download
             pdf_path = samples_dir / f"{cert.cert_id}.pdf"
             generate_certificate_pdf(
                 cert_id           = cert.cert_id,
@@ -325,6 +340,7 @@ async def issue_post(
                 sha256_hash       = result_data["sha256_hash"],
                 canonical_json_ref= f"{cert.cert_id}.json",
                 signature_b64     = result_data["signature_b64"],
+                usn               = cert.usn,
             )
             json_path = samples_dir / f"{cert.cert_id}.json"
             json_package = {
@@ -366,6 +382,44 @@ async def revoke_cert(
     return RedirectResponse(url="/certificates", status_code=302)
 
 
+@app.post("/update-status/{cert_id}")
+async def update_cert_status(
+    cert_id: str,
+    request: Request,
+    status: str = Form(...),
+    reason: str = Form(""),
+):
+    """Edit status: toggle ACTIVE or REVOKED for malpractice."""
+    if not is_authenticated(request):
+        raise HTTPException(status_code=403, detail="Admin authentication required.")
+
+    revoked_val = 1 if status.strip().upper() == "REVOKED" else 0
+    clean_reason = reason.strip() if reason and reason.strip() else ("Credential canceled due to academic malpractice" if revoked_val else "")
+    success = update_certificate_status(cert_id, revoked_val, clean_reason, db_path=DB_PATH)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Certificate '{cert_id}' not found.")
+    return RedirectResponse(url="/certificates", status_code=302)
+
+
+@app.post("/update-status/{cert_id}")
+async def update_cert_status(
+    cert_id: str,
+    request: Request,
+    status: str = Form(...),
+    reason: str = Form(""),
+):
+    """Edit status: toggle ACTIVE or REVOKED for malpractice."""
+    if not is_authenticated(request):
+        raise HTTPException(status_code=403, detail="Admin authentication required.")
+
+    revoked_val = 1 if status.strip().upper() == "REVOKED" else 0
+    clean_reason = reason.strip() if reason and reason.strip() else ("Credential canceled due to academic malpractice" if revoked_val else "")
+    success = update_certificate_status(cert_id, revoked_val, clean_reason, db_path=DB_PATH)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Certificate '{cert_id}' not found.")
+    return RedirectResponse(url="/certificates", status_code=302)
+
+
 # ─── Certificate File Download Endpoints (PDF & JSON) ─────────────────────────
 
 @app.get("/download/pdf/{cert_id}")
@@ -386,6 +440,8 @@ async def download_certificate_pdf(cert_id: str, request: Request):
         if prefixed_pdf.exists():
             pdf_path = prefixed_pdf
         else:
+            keys = cert.keys() if hasattr(cert, "keys") else []
+            cert_usn = cert["usn"] if "usn" in keys and cert["usn"] else ""
             generate_certificate_pdf(
                 cert_id           = cert["cert_id"],
                 student_name      = cert["student_name"],
@@ -397,6 +453,7 @@ async def download_certificate_pdf(cert_id: str, request: Request):
                 sha256_hash       = cert["sha256_hash"],
                 canonical_json_ref= f"{cert_id}.json",
                 signature_b64     = base64.b64encode(cert["signature"]).decode("utf-8"),
+                usn               = cert_usn,
             )
 
     return FileResponse(

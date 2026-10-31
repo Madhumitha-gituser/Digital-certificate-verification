@@ -58,6 +58,7 @@ def init_db(db_path: Path = DB_PATH) -> None:
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
                 cert_id         TEXT    NOT NULL UNIQUE,   -- e.g. CERT-2026-001
                 student_name    TEXT    NOT NULL,
+                usn             TEXT    DEFAULT '',        -- University Seat Number (e.g. 1VI22IS045)
                 course          TEXT    NOT NULL,
                 institution     TEXT    NOT NULL,
                 issue_date      TEXT    NOT NULL,
@@ -71,6 +72,11 @@ def init_db(db_path: Path = DB_PATH) -> None:
             )
         """)
 
+        # Schema migration check: ensure 'usn' column exists on existing databases
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(certificates)").fetchall()]
+        if "usn" not in cols and len(cols) > 0:
+            conn.execute("ALTER TABLE certificates ADD COLUMN usn TEXT DEFAULT ''")
+
         # ── Admin Users ────────────────────────────────────────────────────────
         conn.execute("""
             CREATE TABLE IF NOT EXISTS admin_users (
@@ -82,12 +88,9 @@ def init_db(db_path: Path = DB_PATH) -> None:
         """)
 
         # ── Create default admin if table is empty ─────────────────────────────
-        # Password: admin123 (bcrypt hashed). Change in production!
         existing = conn.execute("SELECT COUNT(*) FROM admin_users").fetchone()[0]
         if existing == 0:
-            # bcrypt hash of "admin123"
             import hashlib
-            # Simple SHA-256 hash for the demo (bcrypt would need the library)
             pw_hash = hashlib.sha256(b"admin123").hexdigest()
             conn.execute(
                 "INSERT INTO admin_users (username, password_hash, created_at) VALUES (?, ?, ?)",
@@ -107,13 +110,12 @@ def insert_certificate(
     sha256_hash: str,
     signature: bytes,
     issuer_id: str,
+    usn: str = '',
     db_path: Path = DB_PATH,
 ) -> bool:
     """
     Insert a new trusted certificate record.
-
     Returns True if inserted, False if the cert_id already exists.
-    Using UNIQUE constraint on cert_id prevents duplicate registrations.
     """
     conn = get_connection(db_path)
     issued_at = datetime.now(timezone.utc).isoformat()
@@ -122,16 +124,15 @@ def insert_certificate(
             conn.execute(
                 """
                 INSERT INTO certificates
-                    (cert_id, student_name, course, institution, issue_date,
+                    (cert_id, student_name, usn, course, institution, issue_date,
                      canonical_json, sha256_hash, signature, issuer_id, issued_at, revoked)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
                 """,
-                (cert_id, student_name, course, institution, issue_date,
+                (cert_id, student_name, usn, course, institution, issue_date,
                  canonical_json, sha256_hash, signature, issuer_id, issued_at),
             )
         return True
     except sqlite3.IntegrityError:
-        # cert_id already exists — do not overwrite
         return False
     finally:
         conn.close()
@@ -170,12 +171,20 @@ def revoke_certificate(cert_id: str, reason: str, db_path: Path = DB_PATH) -> bo
     Mark a certificate as revoked.
     Returns True if the record was found and updated.
     """
+    return update_certificate_status(cert_id, 1, reason, db_path=db_path)
+
+
+def update_certificate_status(cert_id: str, revoked: int, reason: str = "", db_path: Path = DB_PATH) -> bool:
+    """
+    Update the status (ACTIVE or REVOKED) and optional reason for a certificate.
+    """
     conn = get_connection(db_path)
     try:
         with conn:
+            clean_reason = reason.strip() if reason and reason.strip() else ("Revoked due to academic malpractice" if revoked else None)
             cursor = conn.execute(
-                "UPDATE certificates SET revoked = 1, revoke_reason = ? WHERE cert_id = ?",
-                (reason, cert_id),
+                "UPDATE certificates SET revoked = ?, revoke_reason = ? WHERE cert_id = ?",
+                (revoked, clean_reason if revoked else None, cert_id),
             )
         return cursor.rowcount > 0
     finally:
@@ -195,4 +204,3 @@ def verify_admin_password(username: str, password: str, db_path: Path = DB_PATH)
         return row is not None
     finally:
         conn.close()
-

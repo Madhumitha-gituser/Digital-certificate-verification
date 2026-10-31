@@ -2,32 +2,24 @@
 {% block title %}Verify Certificate — CertVerify{% endblock %}
 
 {% block content %}
-<div class="container py-5">
+<div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
 
-            <!-- Page Header -->
-            <div class="text-center mb-4">
-                <h2 class="fw-bold mb-2" style="color:#0b192c; font-size:1.85rem;">
-                    <i class="bi bi-shield-check me-2" style="color:#1565c0;"></i>Verify Your Certificate
-                </h2>
-                <p class="text-muted" style="font-size:1rem;">
-                    Upload your academic certificate to verify its authenticity.
-                </p>
-            </div>
-
-            <!-- Error Message -->
-            {% if error_msg %}
-            <div class="alert d-flex align-items-center gap-2 mb-4" style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; color:#b91c1c;">
-                <i class="bi bi-exclamation-circle-fill fs-5 flex-shrink-0"></i>
-                <div>{{ error_msg }}</div>
-            </div>
-            {% endif %}
-
-            <!-- ── Verification Result Panel ── -->
             {% if result %}
-            {% set status = result.status %}
+            <!-- ═════════════════════════════════════════════════════════════════ -->
+            <!-- 1. VERIFICATION RESULT VIEW (Shown after file is uploaded) -->
+            <!-- ═════════════════════════════════════════════════════════════════ -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <a href="/verify" class="btn btn-outline-secondary fw-semibold">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Upload / Verify Another
+                </a>
+                <a href="/certificates" class="btn btn-outline-dark btn-sm">
+                    <i class="bi bi-list-check me-1"></i>View Registry
+                </a>
+            </div>
 
+            {% set status = result.status %}
             <div class="card mb-4 border-0 shadow-sm" id="result-panel" style="border-radius:14px; overflow:hidden;">
 
                 {% if status == 'VALID' %}
@@ -51,8 +43,20 @@
                             </div>
                             <div class="col-md-6">
                                 <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #bbf7d0;">
+                                    <div class="text-muted small mb-1">University Seat Number (USN)</div>
+                                    <div class="fw-bold text-dark">{{ result.usn or '—' }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #bbf7d0;">
                                     <div class="text-muted small mb-1">Student Name</div>
                                     <div class="fw-bold text-dark">{{ result.student_name }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #bbf7d0;">
+                                    <div class="text-muted small mb-1">Course / Degree</div>
+                                    <div class="fw-bold text-dark">{{ result.course }}</div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -73,7 +77,7 @@
                                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-2">
                                             {% if result.signature_valid %}
-                                            <span class="badge" style="background:#16a34a; font-size:0.88rem; padding:0.45rem 0.8rem;">
+                                             <span class="badge" style="background:#16a34a; font-size:0.88rem; padding:0.45rem 0.8rem;">
                                                 <i class="bi bi-check-circle-fill me-1"></i>Verified (RSA-2048 / SHA-256)
                                             </span>
                                             <span class="text-muted small ms-2">Signature matches trusted issuer public key.</span>
@@ -83,12 +87,19 @@
                                             </span>
                                             {% endif %}
                                         </div>
-                                        <a href="/download/pdf/{{ result.cert_id }}" target="_blank" class="btn btn-sm btn-outline-success fw-semibold">
-                                            <i class="bi bi-file-earmark-pdf me-1"></i>View / Download PDF Certificate
-                                        </a>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Action Buttons inside Result Card -->
+                        <div class="d-flex flex-wrap gap-2 pt-3 mt-3 border-top">
+                            <a href="/verify" class="btn btn-outline-secondary px-4 py-2 fw-semibold">
+                                <i class="bi bi-arrow-left me-2"></i>Verify Another Certificate
+                            </a>
+                            <a href="/download/pdf/{{ result.cert_id }}" target="_blank" class="btn btn-success px-4 py-2 fw-semibold">
+                                <i class="bi bi-file-earmark-pdf me-2"></i>Download Certificate PDF
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -135,6 +146,12 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="pt-3 mt-3 border-top">
+                            <a href="/verify" class="btn btn-outline-secondary px-4 py-2 fw-semibold">
+                                <i class="bi bi-arrow-left me-2"></i>Verify Another Certificate
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -157,6 +174,12 @@
                         <div style="background:#ffffff; border-radius:10px; padding:1rem; border:1px solid #fde68a;">
                             <div class="text-muted small mb-1">Queried Certificate ID</div>
                             <div class="fw-bold text-dark">{{ result.cert_id }}</div>
+                        </div>
+
+                        <div class="pt-3 mt-3 border-top">
+                            <a href="/verify" class="btn btn-outline-secondary px-4 py-2 fw-semibold">
+                                <i class="bi bi-arrow-left me-2"></i>Verify Another Certificate
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -199,21 +222,38 @@
                             </div>
                             {% endif %}
                         </div>
+
+                        <div class="pt-3 mt-3 border-top">
+                            <a href="/verify" class="btn btn-outline-secondary px-4 py-2 fw-semibold">
+                                <i class="bi bi-arrow-left me-2"></i>Verify Another Certificate
+                            </a>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
 
             </div>
 
-            <!-- Verify Another Certificate Button -->
+            {% else %}
+            <!-- ═════════════════════════════════════════════════════════════════ -->
+            <!-- 2. UPLOAD VIEW (Shown when ready to verify a file) -->
+            <!-- ═════════════════════════════════════════════════════════════════ -->
             <div class="text-center mb-4">
-                <a href="/verify" class="btn btn-outline-secondary px-4 py-2" style="border-radius:8px; font-weight:600;">
-                    <i class="bi bi-arrow-counterclockwise me-2"></i>Verify Another Certificate
-                </a>
+                <h2 class="fw-bold mb-2" style="color:#0b192c; font-size:1.85rem;">
+                    <i class="bi bi-shield-check me-2" style="color:#1565c0;"></i>Verify Your Certificate
+                </h2>
+                <p class="text-muted" style="font-size:1rem;">
+                    Upload your academic certificate to verify its authenticity.
+                </p>
+            </div>
+
+            {% if error_msg %}
+            <div class="alert d-flex align-items-center gap-2 mb-4" style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; color:#b91c1c;">
+                <i class="bi bi-exclamation-circle-fill fs-5 flex-shrink-0"></i>
+                <div>{{ error_msg }}</div>
             </div>
             {% endif %}
 
-            <!-- ── Upload Form ── -->
             <div class="card border-0 shadow-sm" id="upload-section" style="border-radius:14px; background:#ffffff;">
                 <div class="card-body p-4 p-md-5">
                     <form method="post" enctype="multipart/form-data" id="verify-form" onsubmit="showLoading()">
@@ -259,7 +299,7 @@
                             </div>
                         </div>
 
-                        <!-- Clear Loading Indicator -->
+                        <!-- Loading Indicator -->
                         <div id="loading-indicator" style="display:none; text-align:center; margin-top:1.5rem; padding:1rem; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">
                             <div class="spinner-border text-primary" style="width:2.2rem; height:2.2rem;" role="status">
                                 <span class="visually-hidden">Loading...</span>
@@ -279,6 +319,7 @@
                     </form>
                 </div>
             </div>
+            {% endif %}
 
         </div>
     </div>
@@ -362,13 +403,5 @@ function showLoading() {
         loading.style.display = 'block';
     }
 }
-
-// Auto scroll to result if displayed
-document.addEventListener('DOMContentLoaded', function() {
-    const resultPanel = document.getElementById('result-panel');
-    if (resultPanel) {
-        resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-});
 </script>
 {% endblock %}

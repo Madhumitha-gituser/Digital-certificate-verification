@@ -25,9 +25,8 @@
                     <div class="d-flex gap-3 align-items-start mb-3">
                         <div class="step-circle">1</div>
                         <div>
-                            <strong>Generate Sample Certificates</strong><br>
-                            <code class="small bg-light px-2 py-1 rounded text-primary">python generate_samples.py</code><br>
-                            <span class="text-muted small">Creates authentic, tampered, and unknown sample packages in <code>sample_certificates/</code>.</span>
+                            <strong>Issue Academic Certificate</strong><br>
+                            <span class="text-muted small">Authorized administrators issue and digitally sign certificates via the institutional portal.</span>
                         </div>
                     </div>
                     <div class="d-flex gap-3 align-items-start mb-3">
@@ -292,9 +291,7 @@ json.dumps(cert_data, sort_keys=True, separators=(',', ':'))
   certificate_service.py  # Verification logic
   database.py             # SQLite persistence
   pdf_generator.py        # ReportLab visual certs
-  generate_samples.py     # Sample generation script
   templates/              # Jinja2 templates
-  sample_certificates/    # Demo JSON & PDF files
   instance/               # Keys & SQLite database</pre>
                 </div>
             </div>

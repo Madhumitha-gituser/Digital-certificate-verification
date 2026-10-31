@@ -138,6 +138,25 @@ def test_07_unknown_certificate_verification():
 
 def test_08_revoked_certificate_verification():
     """Uploading a revoked certificate should return REVOKED status."""
+    from database import get_certificate_by_id, insert_certificate, revoke_certificate
+    from crypto_utils import KEY_ISSUER_ID
+
+    # Ensure revoked certificate record exists for the test
+    if not get_certificate_by_id("CERT-2026-002", db_path=DB_PATH):
+        insert_certificate(
+            cert_id="CERT-2026-002",
+            student_name="Vikram Aditya Hegde",
+            course="Bachelor of Engineering in Information Science and Engineering",
+            institution="Vemana Institute of Technology",
+            issue_date="15 January 2026",
+            canonical_json='{"cert_id":"CERT-2026-002","course":"Bachelor of Engineering in Information Science and Engineering","institution":"Vemana Institute of Technology","issue_date":"15 January 2026","student_name":"Vikram Aditya Hegde"}',
+            sha256_hash="bac1564b1606a689bb829e6808afae82592e480ed2057445bdea06100718ea76",
+            signature=b"test-signature",
+            issuer_id=KEY_ISSUER_ID,
+            db_path=DB_PATH,
+        )
+        revoke_certificate("CERT-2026-002", "Credential canceled by Academic Council under VTU Exam Malpractice Regulations Section 14(a)", db_path=DB_PATH)
+
     session_client = TestClient(app)
     session_client.post("/login", data={"username": "admin", "password": "admin123"})
 
@@ -257,3 +276,73 @@ def test_12_download_endpoints():
     assert "application/json" in json_res.headers["content-type"]
     assert b"CERT-2026-001" in json_res.content
 
+
+
+def test_13_issue_certificate_with_usn_and_calendar():
+    """Issuing certificate with USN and calendar date converts date and registers USN."""
+    session_client = TestClient(app)
+    session_client.post("/login", data={"username": "admin", "password": "admin123"})
+
+    response = session_client.post(
+        "/issue",
+        data={
+            "cert_id": "CERT-2026-991",
+            "student_name": "Test USN Student",
+            "usn": "1VI22IS099",
+            "course": "Bachelor of Engineering in Information Science and Engineering",
+            "institution": "Vemana Institute of Technology",
+            "issue_date": "2026-10-30",
+        },
+    )
+    assert response.status_code == 200
+    assert "Certificate Issued Successfully" in response.text
+    assert "CERT-2026-991" in response.text
+    assert "1VI22IS099" in response.text
+
+    # Teardown test certificate so registry remains clean
+    import sqlite3
+    conn = sqlite3.connect(str(DB_PATH))
+    with conn:
+        conn.execute("DELETE FROM certificates WHERE cert_id = 'CERT-2026-991'")
+    conn.close()
+    for ext in ['.pdf', '.json']:
+        p = PROJECT_ROOT / 'sample_certificates' / f'CERT-2026-991{ext}'
+        if p.exists():
+            p.unlink()
+
+    # Teardown test certificate so registry remains clean
+    import sqlite3
+    conn = sqlite3.connect(str(DB_PATH))
+    with conn:
+        conn.execute("DELETE FROM certificates WHERE cert_id = 'CERT-2026-991'")
+    conn.close()
+    for ext in ['.pdf', '.json']:
+        p = PROJECT_ROOT / 'sample_certificates' / f'CERT-2026-991{ext}'
+        if p.exists():
+            p.unlink()
+
+
+def test_14_edit_certificate_status_malpractice():
+    """Admin can edit certificate status to REVOKED for malpractice."""
+    session_client = TestClient(app)
+    session_client.post("/login", data={"username": "admin", "password": "admin123"})
+
+    res = session_client.post(
+        "/update-status/CERT-2026-001",
+        data={"status": "REVOKED", "reason": "Academic malpractice reported during VTU evaluation"},
+        follow_redirects=False,
+    )
+    assert res.status_code == 302
+    assert res.headers["location"] == "/certificates"
+
+    # Check that reason appears in certificates table
+    certs_page = session_client.get("/certificates")
+    assert "Academic malpractice reported" in certs_page.text
+
+    # Restore to ACTIVE
+    restore_res = session_client.post(
+        "/update-status/CERT-2026-001",
+        data={"status": "ACTIVE", "reason": ""},
+        follow_redirects=False,
+    )
+    assert restore_res.status_code == 302
